@@ -1,0 +1,6 @@
+[
+  { "id": "tech-megacaps", "name": "Tech Megacaps", "instruments": ["AAPL", "MSFT", "NVDA"] },
+  { "id": "crypto-core", "name": "Crypto Core", "instruments": ["BTC", "ETH"] },
+  { "id": "credit-macro", "name": "Credit & Macro", "instruments": ["HYG", "TLT", "EURUSD"] },
+  { "id": "growth-watch", "name": "Growth Watch", "instruments": ["TSLA", "NVDA", "ETH"] }
+]

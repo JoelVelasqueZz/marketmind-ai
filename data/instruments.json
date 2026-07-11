@@ -1,0 +1,11 @@
+[
+  { "symbol": "AAPL", "name": "Apple Inc.", "type": "equity", "sector": "Technology" },
+  { "symbol": "MSFT", "name": "Microsoft Corp.", "type": "equity", "sector": "Technology" },
+  { "symbol": "NVDA", "name": "NVIDIA Corp.", "type": "equity", "sector": "Semiconductors" },
+  { "symbol": "TSLA", "name": "Tesla, Inc.", "type": "equity", "sector": "Automotive" },
+  { "symbol": "BTC", "name": "Bitcoin", "type": "crypto", "sector": "Crypto" },
+  { "symbol": "ETH", "name": "Ethereum", "type": "crypto", "sector": "Crypto" },
+  { "symbol": "HYG", "name": "iShares High Yield Corporate Bond ETF", "type": "credit", "sector": "Fixed Income" },
+  { "symbol": "TLT", "name": "iShares 20+ Year Treasury Bond ETF", "type": "credit", "sector": "Fixed Income" },
+  { "symbol": "EURUSD", "name": "Euro / US Dollar", "type": "other", "sector": "Macro / FX" }
+]

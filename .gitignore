@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Env
+.env
+.env.local
+
+# DB
+*.db
+*.sqlite
+*.sqlite3
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+frontend/tsconfig.tsbuildinfo

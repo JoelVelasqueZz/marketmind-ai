@@ -1,0 +1,242 @@
+[
+  {
+    "id": "n001",
+    "headline": "Tesla reports record delivery numbers despite supply chain hurdles",
+    "summary": "Q4 data indicates a 12% increase year-over-year. Analysts suggest local manufacturing hubs in Europe have significantly mitigated global shipping delays.",
+    "source": "Reuters",
+    "published_at": "2026-07-11T13:20:00Z",
+    "instruments": ["TSLA"],
+    "sector": "Automotive",
+    "topic": "Earnings"
+  },
+  {
+    "id": "n002",
+    "headline": "NVIDIA shares slide as new US chip export restrictions target advanced AI accelerators",
+    "summary": "The Commerce Department expanded licensing requirements for high-end GPUs sold to several markets, raising concerns about near-term data-center demand.",
+    "source": "Reuters",
+    "published_at": "2026-07-10T16:05:00Z",
+    "instruments": ["NVDA"],
+    "sector": "Semiconductors",
+    "topic": "Regulación"
+  },
+  {
+    "id": "n003",
+    "headline": "Apple flags supply chain update amid Southeast Asia tariff uncertainty",
+    "summary": "Q3 guidance cites component sourcing risk from new tariff proposals; company says it is diversifying assembly partners outside the affected region.",
+    "source": "Financial Times",
+    "published_at": "2026-07-09T09:40:00Z",
+    "instruments": ["AAPL"],
+    "sector": "Technology",
+    "topic": "Cadena de suministro"
+  },
+  {
+    "id": "n004",
+    "headline": "Spot Bitcoin ETF inflows hit seven-day streak as institutional demand accelerates",
+    "summary": "Cumulative net inflows into US spot Bitcoin ETFs extended their run, with asset managers citing renewed institutional accumulation.",
+    "source": "CoinDesk",
+    "published_at": "2026-07-08T11:15:00Z",
+    "instruments": ["BTC"],
+    "sector": "Crypto",
+    "topic": "Flujos de fondos"
+  },
+  {
+    "id": "n005",
+    "headline": "Microsoft beats on cloud and AI revenue, raises full-year guidance",
+    "summary": "Azure growth accelerated on enterprise AI workload adoption; management pointed to Copilot attach rates as a key driver going forward.",
+    "source": "Bloomberg",
+    "published_at": "2026-07-07T14:00:00Z",
+    "instruments": ["MSFT"],
+    "sector": "Technology",
+    "topic": "Earnings"
+  },
+  {
+    "id": "n006",
+    "headline": "SEC signals potential approval for spot Ethereum ETF by mid-quarter",
+    "summary": "Internal documents suggest a shift in regulatory tone. Major institutional players are already positioning for high-liquidity inflows.",
+    "source": "Bloomberg",
+    "published_at": "2026-07-06T10:30:00Z",
+    "instruments": ["ETH"],
+    "sector": "Crypto",
+    "topic": "Regulación"
+  },
+  {
+    "id": "n007",
+    "headline": "Global bond yields surge as inflation data exceeds Fed targets",
+    "summary": "Fixed income markets saw heavy sell-offs after the latest CPI print. Analysts expect a longer period of restrictive monetary policy, pressuring high-yield credit.",
+    "source": "CNBC",
+    "published_at": "2026-07-10T08:45:00Z",
+    "instruments": ["HYG", "TLT"],
+    "sector": "Fixed Income",
+    "topic": "Macro"
+  },
+  {
+    "id": "n008",
+    "headline": "European central banks hint at rate pause following cooling inflation figures",
+    "summary": "The Eurozone inflation rate fell to 2.4%, prompting debate over the timeline for the first rate cut of the cycle.",
+    "source": "Financial Times",
+    "published_at": "2026-07-11T09:10:00Z",
+    "instruments": ["EURUSD", "TLT"],
+    "sector": "Macro",
+    "topic": "Bancos centrales"
+  },
+  {
+    "id": "n009",
+    "headline": "Bitcoin mining difficulty reaches new all-time high as network hash rate surges",
+    "summary": "The 5.6% adjustment marks a significant milestone in network security; profitability for small-scale miners is under pressure.",
+    "source": "CoinDesk",
+    "published_at": "2026-07-09T18:20:00Z",
+    "instruments": ["BTC"],
+    "sector": "Crypto",
+    "topic": "On-chain"
+  },
+  {
+    "id": "n010",
+    "headline": "NVIDIA unveils next-gen Blackwell Ultra platform at developer conference",
+    "summary": "The company claims a further leap in inference efficiency for large language models, with partnerships confirmed across major cloud providers.",
+    "source": "CNBC",
+    "published_at": "2026-07-04T15:30:00Z",
+    "instruments": ["NVDA"],
+    "sector": "Semiconductors",
+    "topic": "Producto"
+  },
+  {
+    "id": "n011",
+    "headline": "Tesla FSD v13 rollout accelerates in Europe amid regulatory approval push",
+    "summary": "Adoption rates climb as the company seeks broader regulatory sign-off for supervised full self-driving across additional EU markets.",
+    "source": "Reuters",
+    "published_at": "2026-07-03T12:00:00Z",
+    "instruments": ["TSLA"],
+    "sector": "Automotive",
+    "topic": "Regulación"
+  },
+  {
+    "id": "n012",
+    "headline": "Apple Intelligence expansion seen as potential catalyst for iPhone upgrade cycle",
+    "summary": "Analysts flag stronger-than-expected early adoption metrics in initial markets, though international rollout remains gradual.",
+    "source": "WSJ",
+    "published_at": "2026-07-02T10:00:00Z",
+    "instruments": ["AAPL"],
+    "sector": "Technology",
+    "topic": "Producto"
+  },
+  {
+    "id": "n013",
+    "headline": "High-yield credit spreads widen to three-month high on growth concerns",
+    "summary": "Investors rotated out of riskier credit tranches as macro data pointed to slowing industrial activity in key export economies.",
+    "source": "Bloomberg",
+    "published_at": "2026-07-01T13:00:00Z",
+    "instruments": ["HYG"],
+    "sector": "Fixed Income",
+    "topic": "Macro"
+  },
+  {
+    "id": "n014",
+    "headline": "Ethereum layer-2 activity hits record throughput as gas fees stay low",
+    "summary": "On-chain data shows sustained growth in rollup transaction volume, reinforcing the network's scaling roadmap narrative.",
+    "source": "CoinDesk",
+    "published_at": "2026-06-30T09:00:00Z",
+    "instruments": ["ETH"],
+    "sector": "Crypto",
+    "topic": "On-chain"
+  },
+  {
+    "id": "n015",
+    "headline": "Microsoft announces new enterprise AI security suite amid rising compliance demand",
+    "summary": "The offering targets regulated industries seeking auditable AI deployments, a growing procurement requirement in finance and healthcare.",
+    "source": "WSJ",
+    "published_at": "2026-06-28T11:20:00Z",
+    "instruments": ["MSFT"],
+    "sector": "Technology",
+    "topic": "Producto"
+  },
+  {
+    "id": "n016",
+    "headline": "US Treasury yields dip after softer-than-expected jobs report",
+    "summary": "Payroll growth undershot consensus estimates, reviving expectations of an earlier pivot in monetary policy.",
+    "source": "CNBC",
+    "published_at": "2026-06-26T14:00:00Z",
+    "instruments": ["TLT", "EURUSD"],
+    "sector": "Macro",
+    "topic": "Empleo"
+  },
+  {
+    "id": "n017",
+    "headline": "NVIDIA supply chain partners confirm capacity expansion into 2027",
+    "summary": "Key foundry partners disclosed additional advanced-node capacity commitments, easing some near-term supply concerns for AI accelerators.",
+    "source": "Reuters",
+    "published_at": "2026-06-24T08:30:00Z",
+    "instruments": ["NVDA"],
+    "sector": "Semiconductors",
+    "topic": "Cadena de suministro"
+  },
+  {
+    "id": "n018",
+    "headline": "Tesla energy storage deployments double year-over-year",
+    "summary": "Megapack installations drove a record quarter for the energy division, a segment increasingly cited by bulls as underappreciated.",
+    "source": "Bloomberg",
+    "published_at": "2026-06-20T12:45:00Z",
+    "instruments": ["TSLA"],
+    "sector": "Energy",
+    "topic": "Earnings"
+  },
+  {
+    "id": "n019",
+    "headline": "Bitcoin volatility index falls to multi-year low as market matures",
+    "summary": "Analysts point to deepening derivatives liquidity and broader institutional participation as stabilizing forces.",
+    "source": "CoinDesk",
+    "published_at": "2026-06-18T16:00:00Z",
+    "instruments": ["BTC"],
+    "sector": "Crypto",
+    "topic": "Volatilidad"
+  },
+  {
+    "id": "n020",
+    "headline": "Apple supplier reports mixed quarter as component pricing pressure persists",
+    "summary": "Margin commentary from a key assembly partner adds nuance to the broader Apple supply chain narrative heading into the next product cycle.",
+    "source": "Financial Times",
+    "published_at": "2026-06-16T10:15:00Z",
+    "instruments": ["AAPL"],
+    "sector": "Technology",
+    "topic": "Cadena de suministro"
+  },
+  {
+    "id": "n021",
+    "headline": "ECB officials signal caution on further easing amid sticky services inflation",
+    "summary": "Policymakers flagged persistent services-sector price pressure as a reason to avoid front-loading additional rate cuts.",
+    "source": "Reuters",
+    "published_at": "2026-06-14T09:00:00Z",
+    "instruments": ["EURUSD"],
+    "sector": "Macro",
+    "topic": "Bancos centrales"
+  },
+  {
+    "id": "n022",
+    "headline": "Microsoft data center buildout draws scrutiny over power grid strain",
+    "summary": "Regulators in several states are reviewing interconnection queues as hyperscaler demand for electricity accelerates.",
+    "source": "WSJ",
+    "published_at": "2026-06-12T13:30:00Z",
+    "instruments": ["MSFT"],
+    "sector": "Technology",
+    "topic": "Regulación"
+  },
+  {
+    "id": "n023",
+    "headline": "High-yield issuance surges as companies rush to lock in rates before year-end",
+    "summary": "Primary credit markets saw the busiest week of the quarter, with issuers citing favorable spread compression.",
+    "source": "Bloomberg",
+    "published_at": "2026-06-10T15:00:00Z",
+    "instruments": ["HYG"],
+    "sector": "Fixed Income",
+    "topic": "Emisión de deuda"
+  },
+  {
+    "id": "n024",
+    "headline": "Ethereum staking yield compresses as validator set continues to grow",
+    "summary": "Network-level staking economics shifted as participation climbed past a new milestone, a dynamic closely watched by long-term holders.",
+    "source": "CoinDesk",
+    "published_at": "2026-06-08T11:00:00Z",
+    "instruments": ["ETH"],
+    "sector": "Crypto",
+    "topic": "On-chain"
+  }
+]

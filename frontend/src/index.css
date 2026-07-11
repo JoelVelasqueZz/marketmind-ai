@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  font-family: "Material Symbols Outlined";
+}
+
+.ai-glow {
+  box-shadow: 0 0 12px rgba(180, 197, 255, 0.15);
+}
+
+.news-card-hover:hover {
+  transform: translateY(-2px);
+  background-color: #1f2937;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #434655;
+  border-radius: 10px;
+}
