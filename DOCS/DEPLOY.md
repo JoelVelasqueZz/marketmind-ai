@@ -20,21 +20,24 @@ Servicio `track5-backend` creado vía Blueprint (`render.yaml`) con `GOOGLE_API_
 
 Verificado en producción: `GET /api/health`, `GET /api/instruments`, `POST /api/signals/generate` responden correctamente.
 
-## 3. Frontend en Vercel
+## 3. Frontend en Vercel — ✅ desplegado
 
-1. Entra a https://vercel.com/new → importa el mismo repo de GitHub (`marketmind-ai`).
-2. **Root Directory:** `frontend`.
-3. Framework preset: Vite (debería autodetectarse).
-4. En **Environment Variables**, agrega `VITE_API_URL` = `https://track5-backend.onrender.com`.
-5. Deploy. Copia la URL pública (`https://track5-marketmind.vercel.app` o similar).
+URL pública (dominio corto): **https://marketmind-ai-three.vercel.app**
+(URL del deployment de producción: `marketmind-cjo7x6lnz-joelvelasquezzs-projects.vercel.app` — usar siempre la de dominio corto de arriba para el entregable).
 
-## 4. Actualizar CORS del backend
+Proyecto `marketmind-ai` en Vercel, Root Directory `frontend`, con `VITE_API_URL=https://track5-backend.onrender.com`.
 
-En Render, edita la variable `CORS_ORIGINS` del backend para que incluya la URL real de Vercel (por ahora está en `*` para no bloquear mientras se prueba, pero antes de la entrega final conviene restringirla a la URL exacta del frontend).
+Verificado: CORS entre `marketmind-ai-three.vercel.app` y el backend en Render responde 200 OK.
+
+**Este es el link de despliegue para el entregable #5.**
+
+## 4. Actualizar CORS del backend (opcional, antes de la entrega final)
+
+En Render, `CORS_ORIGINS` sigue en `*` (funciona bien, verificado). Si se quiere restringir por buena práctica: editar esa variable a `https://marketmind-ai-three.vercel.app` en **Settings → Environment** del servicio `track5-backend`.
 
 ## 5. Verificar
 
-Abre la URL de Vercel en el navegador y repite el recorrido de las 3 páginas (Radar, AI Analysis, Briefings) — debe verse igual que en local. Ese es el **link de despliegue** para el entregable #5.
+Abre https://marketmind-ai-three.vercel.app en el navegador y repite el recorrido de las 3 páginas (Radar, AI Analysis, Briefings) — debe verse igual que en local.
 
 ## Migrar a otro host (si un compañero consigue uno de pago)
 
