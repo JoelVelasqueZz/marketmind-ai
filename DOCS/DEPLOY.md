@@ -12,22 +12,20 @@ gh repo create track5-marketmind --public --source=. --remote=origin --push
 # git remote add origin <url> && git push -u origin main
 ```
 
-## 2. Backend en Render
+## 2. Backend en Render — ✅ desplegado
 
-1. Entra a https://dashboard.render.com → **New +** → **Web Service**.
-2. Conecta tu cuenta de GitHub y selecciona este repo.
-3. Render debería detectar `render.yaml` automáticamente (Blueprint). Si no, configura a mano:
-   - **Runtime:** Docker (usa el `Dockerfile` de la raíz).
-   - **Plan:** Free.
-4. En **Environment**, agrega `GOOGLE_API_KEY` con tu key (la del `.env` local, nunca la subas al repo).
-5. Deploy. Copia la URL pública que te da Render (algo como `https://track5-backend.onrender.com`).
+URL pública: **https://track5-backend.onrender.com**
+
+Servicio `track5-backend` creado vía Blueprint (`render.yaml`) con `GOOGLE_API_KEY` cargada como variable secreta. Actualmente en `LLM_MODE=mock`; para usar Gemini real, cambiar esa variable a `gemini` en **Settings → Environment** del servicio en Render (no requiere cambios de código).
+
+Verificado en producción: `GET /api/health`, `GET /api/instruments`, `POST /api/signals/generate` responden correctamente.
 
 ## 3. Frontend en Vercel
 
-1. Entra a https://vercel.com/new → importa el mismo repo de GitHub.
+1. Entra a https://vercel.com/new → importa el mismo repo de GitHub (`marketmind-ai`).
 2. **Root Directory:** `frontend`.
 3. Framework preset: Vite (debería autodetectarse).
-4. En **Environment Variables**, agrega `VITE_API_URL` = la URL del backend en Render (paso 2).
+4. En **Environment Variables**, agrega `VITE_API_URL` = `https://track5-backend.onrender.com`.
 5. Deploy. Copia la URL pública (`https://track5-marketmind.vercel.app` o similar).
 
 ## 4. Actualizar CORS del backend
