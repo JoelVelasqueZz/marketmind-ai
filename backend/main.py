@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
+from backend.agents.llm import TransientLLMError
 from backend.config import CORS_ORIGINS
 from backend.db import init_db
 from backend.routers import briefing, instruments, news, signals, tasks
@@ -38,6 +40,19 @@ app.include_router(news.router)
 app.include_router(signals.router)
 app.include_router(briefing.router)
 app.include_router(tasks.router)
+
+
+@app.exception_handler(TransientLLMError)
+async def transient_llm_error_handler(request: Request, exc: TransientLLMError):
+    return JSONResponse(
+        status_code=503,
+        content={
+            "detail": (
+                "El proveedor de IA esta temporalmente saturado (alta demanda). "
+                "Intenta de nuevo en unos segundos."
+            )
+        },
+    )
 
 
 @app.get("/api/health")

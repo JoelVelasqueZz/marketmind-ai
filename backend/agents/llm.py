@@ -11,13 +11,41 @@ codigo (nodos del grafo, servicios, routers) no conoce el proveedor.
 """
 from __future__ import annotations
 
-from typing import Type, TypeVar
+import time
+from typing import Callable, Type, TypeVar
 
 from pydantic import BaseModel
 
 from backend.config import ANTHROPIC_API_KEY, GOOGLE_API_KEY, LLM_MODE, LLM_MODEL
 
 T = TypeVar("T", bound=BaseModel)
+
+MAX_ATTEMPTS = 3
+BASE_DELAY_SECONDS = 1.5
+
+
+class TransientLLMError(Exception):
+    """Fallo transitorio del proveedor de LLM (503/429) tras agotar los reintentos."""
+
+
+def _with_retry(call: Callable[[], T], is_transient: Callable[[Exception], bool]) -> T:
+    """Reintenta con backoff exponencial ante errores transitorios (503/429) del proveedor.
+
+    No reintenta errores de cliente (modelo invalido, request mal formado, etc.) — esos
+    fallan de inmediato porque reintentarlos no cambia el resultado.
+    """
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            return call()
+        except Exception as exc:  # noqa: BLE001 - reevaluado abajo via is_transient
+            if not is_transient(exc):
+                raise
+            if attempt == MAX_ATTEMPTS:
+                raise TransientLLMError(
+                    f"El proveedor de LLM no respondio tras {MAX_ATTEMPTS} intentos: {exc}"
+                ) from exc
+            time.sleep(BASE_DELAY_SECONDS * (2 ** (attempt - 1)))
+    raise AssertionError("unreachable")  # pragma: no cover
 
 
 class LLMClient:
@@ -35,37 +63,55 @@ class LLMClient:
     # --- Gemini ---
     def _generate_gemini(self, system_prompt: str, user_prompt: str, schema: Type[T]) -> T:
         from google import genai
+        from google.genai import errors as genai_errors
         from google.genai import types
 
         client = genai.Client(api_key=GOOGLE_API_KEY)
-        response = client.models.generate_content(
-            model=self.model,
-            contents=user_prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=system_prompt,
-                response_mime_type="application/json",
-                response_schema=schema,
-                temperature=0.2,
-            ),
-        )
-        parsed = response.parsed
-        if parsed is None:
-            return schema.model_validate_json(response.text)
-        return parsed
+
+        def call() -> T:
+            response = client.models.generate_content(
+                model=self.model,
+                contents=user_prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    response_mime_type="application/json",
+                    response_schema=schema,
+                    temperature=0.2,
+                ),
+            )
+            parsed = response.parsed
+            if parsed is None:
+                return schema.model_validate_json(response.text)
+            return parsed
+
+        def is_transient(exc: Exception) -> bool:
+            if isinstance(exc, genai_errors.ServerError):
+                return True
+            code = getattr(exc, "code", None) or getattr(exc, "status_code", None)
+            return isinstance(exc, genai_errors.ClientError) and code == 429
+
+        return _with_retry(call, is_transient)
 
     # --- Claude (alterno) ---
     def _generate_claude(self, system_prompt: str, user_prompt: str, schema: Type[T]) -> T:
         import anthropic
 
         client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-        message = client.messages.parse(
-            model=self.model if "claude" in self.model else "claude-sonnet-5",
-            max_tokens=1024,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_prompt}],
-            response_format=schema,
-        )
-        return message.parsed
+
+        def call() -> T:
+            message = client.messages.parse(
+                model=self.model if "claude" in self.model else "claude-sonnet-5",
+                max_tokens=1024,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_prompt}],
+                response_format=schema,
+            )
+            return message.parsed
+
+        def is_transient(exc: Exception) -> bool:
+            return isinstance(exc, (anthropic.InternalServerError, anthropic.RateLimitError, anthropic.APIConnectionError))
+
+        return _with_retry(call, is_transient)
 
     # --- Mock (determinista, sin red) ---
     def _generate_mock(self, system_prompt: str, user_prompt: str, schema: Type[T]) -> T:
