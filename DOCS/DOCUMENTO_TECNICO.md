@@ -101,6 +101,43 @@ El sistema está diseñado con puntos de extensión explícitos para no requerir
 - **Despliegue:** el backend es un contenedor Docker autocontenido (`Dockerfile`) desplegable en cualquier plataforma corporativa (Kubernetes, ECS, Azure Container Apps) sin cambios; el frontend es un build estático (Vite) servible desde cualquier CDN interno.
 - **Cambio de proveedor LLM:** si la empresa ya tiene un contrato con un proveedor de LLM distinto (Azure OpenAI, Vertex AI, Claude vía Bedrock), solo se agrega un nuevo modo en `LLMClient` (`backend/agents/llm.py`) — el resto del sistema (grafo, prompts, schemas de salida) no se toca.
 
-## 6. Evidencia de pruebas
+## 6. Criterios de aceptación (Given/When/Then)
 
-Ver `tests/` (pytest): tests de nodos del grafo con LLM mockeado (`test_analyst_node.py`, `test_advisor_node.py`), smoke test del pipeline completo (`test_agent.py`) y tests de los endpoints (`test_api.py`), incluyendo verificación explícita de que ninguna salida del sistema sugiere una orden de compra/venta. Correr con `pytest` desde la raíz del repo.
+Siguiendo un enfoque de **Spec-Driven Development** (la especificación es la fuente de verdad; el código es una implementación que debe satisfacerla), cada criterio de aceptación de las 3 Historias de Usuario del track se tradujo en un escenario verificable y en un test automatizado concreto — no queda como una opinión de si "funciona", sino como evidencia ejecutable.
+
+### HU1 — Radar de noticias y activos
+
+- **DADO** que existen noticias de al menos 2 fuentes distintas, **CUANDO** se consulta el Radar, **ENTONCES** cada noticia muestra su fuente, fecha e instrumentos relacionados.
+  → `tests/test_api.py::test_news_filters_by_asset`
+- **DADO** que se filtra por tipo de instrumento, activo o antigüedad, **CUANDO** se aplica el filtro, **ENTONCES** solo se devuelven noticias que cumplen ese criterio.
+  → `tests/test_api.py::test_news_filters_by_max_age`, `test_news_filters_by_asset`
+- **DADO** un término de búsqueda libre, **CUANDO** se ejecuta la búsqueda, **ENTONCES** solo aparecen noticias cuyo título, resumen, fuente o instrumentos contienen ese término.
+  → `tests/test_api.py::test_news_free_text_search`
+
+### HU2 — Señal explicable de impacto
+
+- **DADO** una noticia y su instrumento relacionado, **CUANDO** se genera el análisis, **ENTONCES** el sistema devuelve un impacto (positivo/negativo/neutral/incierto) y un nivel de confianza entre 0 y 1, consistente con el movimiento de precio real.
+  → `tests/test_analyst_node.py::test_positive_price_move_yields_positive_impact` (y negative/neutral)
+- **DADO** que ya existe una señal reciente para esa (noticia, instrumento), **CUANDO** se vuelve a pedir el análisis sin forzar regeneración, **ENTONCES** se reutiliza la señal existente en vez de llamar al LLM de nuevo.
+  → `tests/test_api.py::test_signal_generate_reuses_existing_by_default`
+- **DADO** cualquier señal generada, **CUANDO** se inspecciona su contenido, **ENTONCES** incluye evidencia citada, fuentes, comparación de precio y un disclaimer explícito de que no es asesoría personalizada.
+  → `tests/test_analyst_node.py::test_signal_includes_disclaimer_and_sources`
+- **DADO** cualquier señal generada, **CUANDO** se inspecciona la acción sugerida, **ENTONCES** nunca contiene una instrucción de comprar o vender.
+  → `tests/test_analyst_node.py::test_signal_never_suggests_trade_execution`
+
+### HU3 — Briefing con revisión humana
+
+- **DADO** una watchlist con instrumentos y noticias asociadas, **CUANDO** se genera el briefing, **ENTONCES** cada ítem incluye noticia, movimiento de precio y una acción de investigación sugerida.
+  → `tests/test_api.py::test_briefing_generate_creates_tasks_not_orders`
+- **DADO** un briefing generado, **CUANDO** un analista marca una señal como revisada/escalada/descartada con una justificación, **ENTONCES** el estado y la justificación quedan persistidos.
+  → `tests/test_api.py::test_signal_generate_and_review_flow`
+- **DADO** que se genera un briefing, **CUANDO** se crean tareas asociadas, **ENTONCES** ninguna representa una orden de compra/venta — solo una acción de investigación para revisión humana.
+  → `tests/test_advisor_node.py::test_advisor_never_suggests_trade_execution`
+- **DADO** que ya existe una señal/tarea para una (noticia, instrumento), **CUANDO** se regenera el briefing sin forzar, **ENTONCES** no se crean tareas duplicadas.
+  → `tests/test_api.py::test_briefing_generate_reuses_signals_and_does_not_duplicate_tasks`
+- **DADO** una tarea abierta, **CUANDO** se marca como hecha, **ENTONCES** su estado cambia a `done` y puede reabrirse.
+  → `tests/test_api.py::test_task_complete_and_reopen_flow`
+
+## 7. Evidencia de pruebas
+
+Ver `tests/` (pytest): tests de nodos del grafo con LLM mockeado (`test_analyst_node.py`, `test_advisor_node.py`), smoke test del pipeline completo (`test_agent.py`), tests de reintentos ante fallos transitorios del LLM (`test_llm_retry.py`) y tests de los endpoints (`test_api.py`), incluyendo verificación explícita de que ninguna salida del sistema sugiere una orden de compra/venta. 25 tests en total, corridos automáticamente en cada push via GitHub Actions (`.github/workflows/ci.yml`). Correr localmente con `pytest` desde la raíz del repo.
