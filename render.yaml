@@ -5,10 +5,13 @@ services:
     dockerfilePath: ./Dockerfile
     plan: free
     envVars:
+      # LLM_MODE y LLM_MODEL quedan como sync:false para que un futuro `git push`
+      # no pise el valor que se configure a mano en el dashboard de Render
+      # (ej. cambiar de mock a gemini para la demo).
       - key: LLM_MODE
-        value: mock
+        sync: false
       - key: LLM_MODEL
-        value: gemini-2.5-flash
+        sync: false
       - key: GOOGLE_API_KEY
         sync: false
       - key: CORS_ORIGINS
