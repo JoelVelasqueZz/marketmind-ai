@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from backend.db import get_session
@@ -21,6 +21,30 @@ def list_tasks(status: Optional[str] = None, session: Session = Depends(get_sess
 @router.post("", response_model=TaskOut)
 def create_task(payload: TaskCreateRequest, session: Session = Depends(get_session)):
     task = TaskAlert(**payload.model_dump())
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+    return task
+
+
+@router.post("/{task_id}/complete", response_model=TaskOut)
+def complete_task(task_id: str, session: Session = Depends(get_session)):
+    task = session.get(TaskAlert, task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    task.status = "done"
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+    return task
+
+
+@router.post("/{task_id}/reopen", response_model=TaskOut)
+def reopen_task(task_id: str, session: Session = Depends(get_session)):
+    task = session.get(TaskAlert, task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    task.status = "open"
     session.add(task)
     session.commit()
     session.refresh(task)

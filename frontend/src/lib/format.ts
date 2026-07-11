@@ -13,3 +13,7 @@ export function formatPct(value: number): string {
 export function formatConfidence(value: number): string {
   return `${Math.round(value * 100)}%`;
 }
+
+export function formatPrice(value: number): string {
+  return value >= 1000 ? value.toLocaleString("en-US", { maximumFractionDigits: 0 }) : value.toFixed(2);
+}

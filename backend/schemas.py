@@ -68,6 +68,7 @@ class SignalOut(BaseModel):
 class SignalGenerateRequest(BaseModel):
     news_id: str
     instrument: str
+    force: bool = False
 
 
 class ReviewRequest(BaseModel):
@@ -98,6 +99,27 @@ class BriefingOut(BaseModel):
     generated_at: datetime
     items: list[BriefingItemOut]
     disclaimer: str
+
+
+class AssetSignalSummary(BaseModel):
+    impact: Impact
+    confidence: float
+    created_at: datetime
+
+
+class AssetOverview(BaseModel):
+    symbol: str
+    name: str
+    type: Literal["equity", "credit", "crypto", "other"]
+    price: Optional[float] = None
+    change_pct_1d: Optional[float] = None
+    signal: Optional[AssetSignalSummary] = None
+
+
+class WatchlistOverviewOut(BaseModel):
+    watchlist_id: str
+    watchlist_name: str
+    assets: list[AssetOverview]
 
 
 class TaskOut(BaseModel):

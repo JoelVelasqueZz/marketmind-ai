@@ -61,6 +61,10 @@ export default function Signals() {
       setSelectedInstrument(instrumentParam);
       setSelectedNewsId(newsParam);
       generate(newsParam, instrumentParam);
+    } else if (instrumentParam) {
+      // Viene del boton "Analizar" de Watchlist: solo preseleccionamos el
+      // instrumento, el usuario elige la noticia y genera manualmente.
+      setSelectedInstrument(instrumentParam);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);

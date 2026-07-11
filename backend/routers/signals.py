@@ -18,7 +18,9 @@ def list_signals(asset: Optional[str] = None, session: Session = Depends(get_ses
 @router.post("/generate", response_model=SignalOut)
 def generate_signal(payload: SignalGenerateRequest, session: Session = Depends(get_session)):
     try:
-        return signals_service.generate_signal(payload.news_id, payload.instrument, session)
+        return signals_service.generate_signal(
+            payload.news_id, payload.instrument, session, force=payload.force
+        )
     except signals_service.NewsNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 

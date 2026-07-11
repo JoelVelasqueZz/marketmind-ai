@@ -15,7 +15,26 @@ class NewsNotFound(Exception):
     pass
 
 
-def generate_signal(news_id: str, instrument: str, session: Session) -> SignalOut:
+def find_existing_signal(news_id: str, instrument: str, session: Session) -> Optional[Signal]:
+    """Busca una senal ya generada para este (noticia, instrumento).
+
+    Reusarla evita crear duplicados en cada clic de "Generar" y no gasta
+    cuota del LLM de mas para un analisis que ya existe.
+    """
+    query = (
+        select(Signal)
+        .where(Signal.news_id == news_id, Signal.instrument == instrument.upper())
+        .order_by(Signal.created_at.desc())
+    )
+    return session.exec(query).first()
+
+
+def generate_signal(news_id: str, instrument: str, session: Session, force: bool = False) -> SignalOut:
+    if not force:
+        existing = find_existing_signal(news_id, instrument, session)
+        if existing is not None:
+            return _to_out(existing)
+
     news = get_news(news_id)
     if news is None:
         raise NewsNotFound(f"No existe la noticia {news_id}")

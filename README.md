@@ -1,5 +1,7 @@
 # Track 5 — Inteligencia de Mercado y Recomendaciones Informadas por Noticias
 
+[![CI](https://github.com/JoelVelasqueZz/marketmind-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/JoelVelasqueZz/marketmind-ai/actions/workflows/ci.yml)
+
 Sistema de dos agentes IA financieros (Hackathon Agentic Scale, TAWS/ESPOL):
 
 - **Analista de Coyuntura de Mercados IA** — genera señales explicables de impacto a partir de noticias + precios.

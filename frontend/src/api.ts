@@ -1,4 +1,12 @@
-import type { Briefing, Instrument, NewsItem, Signal, TaskAlert, Watchlist } from "./types";
+import type {
+  Briefing,
+  Instrument,
+  NewsItem,
+  Signal,
+  TaskAlert,
+  Watchlist,
+  WatchlistOverview,
+} from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -54,10 +62,19 @@ export const api = {
 
   getWatchlists: () => request<Watchlist[]>("/api/briefing/watchlists"),
 
+  getWatchlistOverview: (watchlistId: string) =>
+    request<WatchlistOverview>(`/api/briefing/watchlists/${encodeURIComponent(watchlistId)}/overview`),
+
   generateBriefing: (watchlistId: string) =>
     request<Briefing>(`/api/briefing/generate?watchlist=${encodeURIComponent(watchlistId)}`, {
       method: "POST",
     }),
 
   getTasks: () => request<TaskAlert[]>("/api/tasks"),
+
+  completeTask: (taskId: string) =>
+    request<TaskAlert>(`/api/tasks/${taskId}/complete`, { method: "POST" }),
+
+  reopenTask: (taskId: string) =>
+    request<TaskAlert>(`/api/tasks/${taskId}/reopen`, { method: "POST" }),
 };

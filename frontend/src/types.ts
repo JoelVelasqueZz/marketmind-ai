@@ -67,6 +67,27 @@ export interface Watchlist {
   instruments: string[];
 }
 
+export interface AssetSignalSummary {
+  impact: Impact;
+  confidence: number;
+  created_at: string;
+}
+
+export interface AssetOverview {
+  symbol: string;
+  name: string;
+  type: InstrumentType;
+  price: number | null;
+  change_pct_1d: number | null;
+  signal: AssetSignalSummary | null;
+}
+
+export interface WatchlistOverview {
+  watchlist_id: string;
+  watchlist_name: string;
+  assets: AssetOverview[];
+}
+
 export interface TaskAlert {
   id: string;
   signal_id?: string | null;

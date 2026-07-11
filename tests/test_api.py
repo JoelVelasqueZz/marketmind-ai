@@ -51,6 +51,30 @@ def test_signal_generate_unknown_news_returns_404(client):
     assert r.status_code == 404
 
 
+def test_signal_generate_reuses_existing_by_default(client):
+    r1 = client.post("/api/signals/generate", json={"news_id": "n004", "instrument": "BTC"})
+    r2 = client.post("/api/signals/generate", json={"news_id": "n004", "instrument": "BTC"})
+    assert r1.json()["id"] == r2.json()["id"]
+
+    r3 = client.post(
+        "/api/signals/generate", json={"news_id": "n004", "instrument": "BTC", "force": True}
+    )
+    assert r3.json()["id"] != r1.json()["id"]
+
+
+def test_briefing_generate_reuses_signals_and_does_not_duplicate_tasks(client):
+    r1 = client.post("/api/briefing/generate", params={"watchlist": "crypto-core"})
+    signal_ids_1 = {item["signal"]["id"] for item in r1.json()["items"]}
+    tasks_after_first = client.get("/api/tasks").json()
+
+    r2 = client.post("/api/briefing/generate", params={"watchlist": "crypto-core"})
+    signal_ids_2 = {item["signal"]["id"] for item in r2.json()["items"]}
+    tasks_after_second = client.get("/api/tasks").json()
+
+    assert signal_ids_1 == signal_ids_2
+    assert len(tasks_after_second) == len(tasks_after_first)
+
+
 def test_briefing_generate_creates_tasks_not_orders(client):
     r = client.post("/api/briefing/generate", params={"watchlist": "tech-megacaps"})
     assert r.status_code == 200
@@ -65,3 +89,49 @@ def test_briefing_generate_creates_tasks_not_orders(client):
     r_tasks = client.get("/api/tasks")
     assert r_tasks.status_code == 200
     assert len(r_tasks.json()) >= len(briefing["items"])
+
+
+def test_task_complete_and_reopen_flow(client):
+    r = client.post(
+        "/api/tasks",
+        json={"instrument": "AAPL", "title": "Revisar tarea de prueba", "description": "desc"},
+    )
+    task = r.json()
+    assert task["status"] == "open"
+
+    r_done = client.post(f"/api/tasks/{task['id']}/complete")
+    assert r_done.status_code == 200
+    assert r_done.json()["status"] == "done"
+
+    r_reopen = client.post(f"/api/tasks/{task['id']}/reopen")
+    assert r_reopen.status_code == 200
+    assert r_reopen.json()["status"] == "open"
+
+
+def test_task_complete_unknown_returns_404(client):
+    r = client.post("/api/tasks/does-not-exist/complete")
+    assert r.status_code == 404
+
+
+def test_watchlist_overview_includes_price_and_signal(client):
+    client.post("/api/signals/generate", json={"news_id": "n004", "instrument": "BTC"})
+
+    r = client.get("/api/briefing/watchlists/crypto-core/overview")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["watchlist_id"] == "crypto-core"
+    symbols = {a["symbol"] for a in body["assets"]}
+    assert {"BTC", "ETH"} == symbols
+
+    btc = next(a for a in body["assets"] if a["symbol"] == "BTC")
+    assert btc["price"] is not None
+    assert btc["signal"] is not None
+    assert btc["signal"]["impact"] in {"positive", "negative", "neutral", "uncertain"}
+
+    eth = next(a for a in body["assets"] if a["symbol"] == "ETH")
+    assert eth["signal"] is None
+
+
+def test_watchlist_overview_unknown_returns_404(client):
+    r = client.get("/api/briefing/watchlists/does-not-exist/overview")
+    assert r.status_code == 404

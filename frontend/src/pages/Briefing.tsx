@@ -40,6 +40,12 @@ export default function Briefing() {
     }
   }
 
+  async function toggleTask(task: TaskAlert) {
+    const updated =
+      task.status === "open" ? await api.completeTask(task.id) : await api.reopenTask(task.id);
+    setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+  }
+
   async function handleReview(signalId: string, status: ReviewStatus, justification: string) {
     if (status === "pending") return;
     await api.reviewSignal(signalId, status, justification);
@@ -165,13 +171,23 @@ export default function Briefing() {
             {tasks.map((t) => (
               <div
                 key={t.id}
-                className="bg-surface-container-low border border-outline-variant rounded-lg p-3"
+                className={`bg-surface-container-low border border-outline-variant rounded-lg p-3 ${
+                  t.status === "done" ? "opacity-50" : ""
+                }`}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-mono-data text-[11px] text-primary">{t.instrument}</span>
                   <span className="text-[10px] uppercase text-on-surface-variant">{t.status}</span>
                 </div>
-                <p className="text-body-md text-on-surface">{t.title}</p>
+                <p className={`text-body-md text-on-surface mb-2 ${t.status === "done" ? "line-through" : ""}`}>
+                  {t.title}
+                </p>
+                <button
+                  className="text-label-sm font-bold text-primary hover:underline"
+                  onClick={() => toggleTask(t)}
+                >
+                  {t.status === "open" ? "Marcar como hecha" : "Reabrir"}
+                </button>
               </div>
             ))}
           </div>
