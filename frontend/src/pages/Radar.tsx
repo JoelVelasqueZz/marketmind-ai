@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import Disclaimer from "../components/Disclaimer";
 import Filters, { type FilterState } from "../components/Filters";
@@ -8,6 +9,8 @@ import type { Instrument, NewsItem } from "../types";
 const EMPTY_FILTERS: FilterState = { type: "", asset: "", maxAgeDays: "" };
 
 export default function Radar() {
+  const [searchParams] = useSearchParams();
+  const q = searchParams.get("q") ?? "";
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
@@ -26,17 +29,23 @@ export default function Radar() {
         type: filters.type || undefined,
         asset: filters.asset || undefined,
         max_age_days: filters.maxAgeDays ? Number(filters.maxAgeDays) : undefined,
+        q: q || undefined,
       })
       .then(setNews)
       .catch((err) => setError(String(err)))
       .finally(() => setLoading(false));
-  }, [filters]);
+  }, [filters, q]);
 
   return (
     <div className="pt-24 pb-stack-lg px-container-padding flex-1">
       <div className="mb-stack-lg">
         <h2 className="font-headline-lg text-headline-lg text-on-surface font-bold">News Radar</h2>
         <p className="text-body-md text-on-surface-variant">
+          {q ? (
+            <>
+              Resultados para <span className="text-on-surface font-bold">"{q}"</span> —{" "}
+            </>
+          ) : null}
           Noticias recientes relacionadas a instrumentos financieros — HU1.
         </p>
       </div>

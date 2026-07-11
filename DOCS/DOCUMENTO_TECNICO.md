@@ -16,6 +16,20 @@ Diseñado para **mesas de análisis e investigación financiera** que necesitan 
 
 El producto **no es** una plataforma de trading ni un asesor automatizado que ejecuta operaciones — es una herramienta de **priorización y explicabilidad** que reduce el tiempo que un analista humano tarda en decidir qué investigar primero, dejando la decisión final (y su justificación) siempre en manos de una persona.
 
+### Productos similares en el mercado y diferenciación
+
+El propio track cita **Google Finance** y **CoinMarketCap** como referencia. Ambos son agregadores de datos (precio, volumen, noticias enlazadas) sin una capa de análisis explicable ni un flujo de revisión humana:
+
+| | Google Finance / CoinMarketCap | MarketMind AI |
+|---|---|---|
+| Noticias | Enlaza titulares externos | Relaciona cada noticia con instrumentos, sector y tema, con filtros |
+| Impacto | No lo evalúa | Clasifica impacto + confianza, comparado contra el movimiento de precio real |
+| Explicabilidad | Ninguna | Evidencia citada, fuentes, disclaimer explícito |
+| Flujo de decisión | Ninguno (solo consulta) | Briefing con acción de investigación + revisión humana (revisada/escalada/descartada) con justificación persistida |
+| Ejecución | N/A | Nunca ejecuta ni sugiere compra/venta — por diseño |
+
+La diferenciación no es "más datos", sino **convertir la información en una decisión de investigación trazable**, algo que ninguno de los productos de referencia ofrece.
+
 ## 3. Diagrama de arquitectura
 
 ```mermaid

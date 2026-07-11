@@ -28,6 +28,7 @@ export interface NewsFilters {
   max_age_days?: number;
   sector?: string;
   topic?: string;
+  q?: string;
 }
 
 function toQuery<T extends object>(params: T): string {

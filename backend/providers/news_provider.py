@@ -18,6 +18,7 @@ class NewsProvider(Protocol):
         max_age_days: Optional[float] = None,
         sector: Optional[str] = None,
         topic: Optional[str] = None,
+        q: Optional[str] = None,
     ) -> list[dict]: ...
 
     def get_news(self, news_id: str) -> Optional[dict]: ...
@@ -37,8 +38,10 @@ class MockNewsProvider:
         max_age_days: Optional[float] = None,
         sector: Optional[str] = None,
         topic: Optional[str] = None,
+        q: Optional[str] = None,
     ) -> list[dict]:
         now = datetime.now(timezone.utc)
+        query = q.lower().strip() if q else None
         results = []
         for item in self._news:
             published_at = datetime.fromisoformat(item["published_at"].replace("Z", "+00:00"))
@@ -60,6 +63,19 @@ class MockNewsProvider:
                 continue
             if topic and topic.lower() not in item["topic"].lower():
                 continue
+            if query:
+                haystack = " ".join(
+                    [
+                        item["headline"],
+                        item["summary"],
+                        item["source"],
+                        item["topic"],
+                        item["sector"],
+                        *item["instruments"],
+                    ]
+                ).lower()
+                if query not in haystack:
+                    continue
 
             results.append({**item, "age_days": round(age_days, 2)})
 

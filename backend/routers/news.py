@@ -15,6 +15,7 @@ def get_news(
     max_age_days: Optional[float] = Query(default=None, ge=0),
     sector: Optional[str] = Query(default=None),
     topic: Optional[str] = Query(default=None),
+    q: Optional[str] = Query(default=None, description="Busqueda libre en titulo/resumen/fuente/instrumentos"),
 ):
     return radar.list_news(
         instrument_type=type,
@@ -22,4 +23,5 @@ def get_news(
         max_age_days=max_age_days,
         sector=sector,
         topic=topic,
+        q=q,
     )

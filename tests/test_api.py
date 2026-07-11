@@ -30,6 +30,21 @@ def test_news_filters_by_max_age(client):
         assert item["age_days"] <= 1
 
 
+def test_news_free_text_search(client):
+    r = client.get("/api/news", params={"q": "bitcoin"})
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body) > 0
+    for item in body:
+        haystack = " ".join(
+            [item["headline"], item["summary"], item["source"], item["topic"], *item["instruments"]]
+        ).lower()
+        assert "bitcoin" in haystack
+
+    r_none = client.get("/api/news", params={"q": "palabra-que-no-existe-en-ninguna-noticia"})
+    assert r_none.json() == []
+
+
 def test_signal_generate_and_review_flow(client):
     r = client.post("/api/signals/generate", json={"news_id": "n002", "instrument": "NVDA"})
     assert r.status_code == 200

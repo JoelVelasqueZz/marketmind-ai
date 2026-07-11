@@ -12,6 +12,7 @@ def list_news(
     max_age_days: Optional[float] = None,
     sector: Optional[str] = None,
     topic: Optional[str] = None,
+    q: Optional[str] = None,
 ) -> list[NewsOut]:
     raw = _news_provider.list_news(
         instrument_type=instrument_type,
@@ -19,6 +20,7 @@ def list_news(
         max_age_days=max_age_days,
         sector=sector,
         topic=topic,
+        q=q,
     )
     return [NewsOut(**item) for item in raw]
 
