@@ -70,7 +70,7 @@ Eliges una noticia + un instrumento, le das a generar, y el **Analista de Coyunt
 Elegís una **watchlist** (grupo de instrumentos) y le das a generar — el **Asesor Financiero e Inversiones IA** arma un resumen ejecutivo por cada instrumento de esa lista que tenga noticias, y crea una **tarea** para seguimiento humano.
 
 **Qué significa cada cosa:**
-- Selector de **watchlist** — incluye una opción **"Todos"** que junta todos los instrumentos de la app.
+- Selector de **watchlist** — abre con **Ecuador & LatAm** preseleccionada (es el caso central de la demo: noticia de la Superintendencia de Bancos → bono ECU2035); incluye también una opción **"Todos"** que junta todos los instrumentos de la app.
 - Cada tarjeta: noticia, movimiento de precio, **acción de investigación** (del Asesor, no del Analista) y un **resumen ejecutivo** de 2-3 puntos.
 - El mismo panel de **Observaciones del analista** que en AI Analysis — revisar la señal desde acá también cuenta.
 - Botón **"Descargar (.md)"** — baja el briefing completo como archivo Markdown, como si fuera el reporte que un analista se lleva para seguir trabajando fuera de la web.

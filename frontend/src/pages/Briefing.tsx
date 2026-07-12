@@ -18,7 +18,10 @@ export default function Briefing() {
   useEffect(() => {
     api.getWatchlists().then((w) => {
       setWatchlists(w);
-      if (w[0]) setSelected(w[0].id);
+      // La demo abre con el caso Ecuador (Superintendencia -> ECU2035); "all" no es briefable.
+      const preferred =
+        w.find((x) => x.id === "ecuador-latam") ?? w.find((x) => x.id !== "all") ?? w[0];
+      if (preferred) setSelected(preferred.id);
     });
     refreshTasks();
   }, []);
