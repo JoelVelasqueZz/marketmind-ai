@@ -70,7 +70,7 @@ def _signal_out(signal: Signal) -> SignalOut:
 
 
 def generate_briefing(watchlist_id: str, session: Session, force: bool = False) -> BriefingOut:
-    watchlist = _watchlists.get(watchlist_id)
+    watchlist = _ALL_WATCHLIST if watchlist_id == ALL_WATCHLIST_ID else _watchlists.get(watchlist_id)
     if watchlist is None:
         raise WatchlistNotFound(f"No existe la watchlist {watchlist_id}")
 

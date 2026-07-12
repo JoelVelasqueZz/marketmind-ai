@@ -233,3 +233,11 @@ def test_all_watchlist_overview_covers_every_instrument_with_price(client):
     for asset in body["assets"]:
         assert asset["price"] is not None, f"{asset['symbol']} no tiene historico de precio"
         assert asset["change_pct_1d"] is not None
+
+
+def test_briefing_generate_for_all_watchlist_does_not_404(client):
+    r = client.post("/api/briefing/generate", params={"watchlist": "all"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["watchlist_id"] == "all"
+    assert len(body["items"]) > 0
