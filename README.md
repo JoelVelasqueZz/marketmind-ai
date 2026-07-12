@@ -79,5 +79,4 @@ Ver checklist en `DOCS/PLAN.md` → sección Despliegue (Render para el backend 
 - [`DOCS/DOCUMENTO_TECNICO.md`](DOCS/DOCUMENTO_TECNICO.md) — entregable técnico: arquitectura, track, negocio, integración empresarial.
 - [`DOCS/RECORRIDO_APP.md`](DOCS/RECORRIDO_APP.md) — recorrido de la web página por página, para alguien que no la ha visto.
 - [`DOCS/GLOSARIO.md`](DOCS/GLOSARIO.md) — glosario de términos financieros y de IA usados en el proyecto.
-- [`DOCS/GUION_VIDEO.md`](DOCS/GUION_VIDEO.md) — guión del video de entrega (4 personas, 3 min).
 - [`DOCS/PLAN.md`](DOCS/PLAN.md) — plan de arquitectura y decisiones tomadas durante el desarrollo.
