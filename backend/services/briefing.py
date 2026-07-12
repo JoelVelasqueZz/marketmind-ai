@@ -5,7 +5,7 @@ from typing import Optional
 from sqlmodel import Session, select
 
 from backend.agents.advisor_node import run_advisor
-from backend.agents.graph import run_pipeline
+from backend.agents.graph import build_monitor_item, run_pipeline, should_route_to_monitor
 from backend.config import DATA_DIR, DISCLAIMER
 from backend.models import Signal, TaskAlert
 from backend.providers.price_provider import MockPriceProvider
@@ -91,17 +91,20 @@ def generate_briefing(watchlist_id: str, session: Session, force: bool = False) 
                 research_action = existing_task.title
                 executive_summary = signal.evidence
             else:
-                # Hay senal pero nunca se armo un briefing con ella: solo falta el Asesor.
-                advisor_result = run_advisor(
-                    {
-                        "instrument": signal.instrument,
-                        "impact": signal.impact,
-                        "confidence": signal.confidence,
-                        "evidence": signal.evidence,
-                        "price_comparison": signal.price_comparison,
-                    },
-                    news,
-                )
+                # Hay senal pero nunca se armo un briefing con ella: aplica el
+                # mismo ruteo que el grafo (neutral de baja confianza no gasta
+                # la llamada del Asesor).
+                signal_data = {
+                    "instrument": signal.instrument,
+                    "impact": signal.impact,
+                    "confidence": signal.confidence,
+                    "evidence": signal.evidence,
+                    "price_comparison": signal.price_comparison,
+                }
+                if should_route_to_monitor(signal.impact, signal.confidence):
+                    advisor_result = build_monitor_item(signal_data, news)
+                else:
+                    advisor_result = run_advisor(signal_data, news)
                 research_action = advisor_result["research_action"]
                 executive_summary = advisor_result["executive_summary"]
                 session.add(

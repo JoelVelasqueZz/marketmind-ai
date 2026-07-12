@@ -45,7 +45,12 @@ def _mock_analyst(context: dict) -> AnalystLLMOutput:
     else:
         impact = "uncertain"
 
-    confidence = round(min(0.95, 0.55 + magnitude / 15), 2)
+    if impact == "neutral":
+        # Movimiento casi nulo = evidencia debil: confianza < 0.5 para que el
+        # grafo pueda derivar la senal a monitoreo (route_after_analyst).
+        confidence = round(0.3 + magnitude / 5, 2)
+    else:
+        confidence = round(min(0.95, 0.55 + magnitude / 15), 2)
 
     evidence = [
         f"Noticia de {source}: \"{headline}\".",
