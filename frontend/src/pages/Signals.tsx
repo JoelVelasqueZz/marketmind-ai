@@ -228,6 +228,7 @@ export default function Signals() {
             <ConfidenceRing confidence={current.confidence} size={96} />
             <div className="w-full">
               <ReviewControls
+                key={current.id}
                 currentStatus={current.review_status}
                 currentJustification={current.review_justification}
                 onSave={(status, justification) => handleReview(current.id, status, justification)}
