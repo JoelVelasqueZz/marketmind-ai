@@ -1,5 +1,7 @@
 # Documento Técnico — MarketMind AI (Track 5)
 
+**Equipo:** Joel Velásquez, Josué Malla, Johnny Arica, Paul Altafuya.
+
 > **Uso de Google Gemini:** este proyecto usa la **API de Gemini** (`gemini-flash-latest`) como motor principal de los dos agentes de IA — el Analista de Coyuntura de Mercados y el Asesor Financiero e Inversiones corren sobre Gemini en producción. La capa `LLMClient` (`backend/agents/llm.py`) es provider-agnóstica (Claude y DeepSeek quedan disponibles como alternos con el mismo contrato, cambiando una sola variable de entorno), pero el motor con el que se demuestra el producto es Gemini. Aplica al premio **"Best Use of Google Gemini"**.
 
 ## 1. Track asignado

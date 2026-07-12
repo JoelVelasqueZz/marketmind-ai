@@ -9,6 +9,8 @@ Sistema de dos agentes IA financieros (Hackathon Agentic Scale, TAWS/ESPOL):
 
 Los agentes nunca ejecutan ni sugieren órdenes de compra/venta: solo generan señales, briefings, alertas y tareas para que una persona decida.
 
+**Equipo:** Joel Velásquez, Josué Malla, Johnny Arica, Paul Altafuya.
+
 **Demo en vivo:** https://marketmind-ai-three.vercel.app (frontend) · https://track5-backend.onrender.com/docs (backend, Swagger)
 
 Plan completo, contexto del hackathon y decisiones de arquitectura: [`DOCS/PLAN.md`](DOCS/PLAN.md).
