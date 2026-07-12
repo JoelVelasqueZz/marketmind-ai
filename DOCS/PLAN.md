@@ -1,5 +1,7 @@
 # Plan — Track 5: Inteligencia de Mercado y Recomendaciones Informadas por Noticias
 
+> **Nota:** este es el plan original, escrito antes de empezar a construir. Se conserva como registro de las decisiones de arquitectura de partida (parte del enfoque de Spec-Driven Development). Varios detalles evolucionaron durante el desarrollo (persistencia en Postgres/Neon en vez de solo SQLite, soporte para DeepSeek además de Gemini/Claude, ruteo condicional en el grafo, etc.) — para el estado actual del sistema, ver [`DOCUMENTO_TECNICO.md`](DOCUMENTO_TECNICO.md) y el [`README.md`](../README.md).
+
 ## Contexto
 
 Hackathon Agentic Scale (TAWS/ESPOL). **Deadline: domingo 12 de julio 2026, 23:59** (hoy 11 julio → quedan ~30h). Hay que construir un sistema de **dos agentes IA financieros** (Track 5) que convierta noticias + datos de mercado en **señales explicables** sobre renta variable, crédito, criptoactivos y otros activos, **sin ejecutar operaciones ni prometer rendimientos**. El MVP debe cumplir las **3 Historias de Usuario** del PDF del track (cada una con sus criterios de aceptación):
@@ -99,7 +101,7 @@ track5/
 - `GET /api/news?type=&asset=&max_age_days=&sector=&topic=` — **HU1**: noticias con fuente, fecha e instrumentos ligados; filtros aplicados server-side.
 - `GET /api/signals?asset=` / `POST /api/signals/generate` — **HU2**: invoca `analyst_node` (solo), genera/persiste señales explicables.
 - `GET /api/briefing?watchlist=` / `POST /api/briefing/generate` — **HU3**: invoca el grafo completo (`analyst_node → advisor_node`), briefing por watchlist.
-- `POST /api/signals/{id}/review` `{status: revisada|escalada|descartada, justification}` — **HU3**: estado + justificación.
+- `POST /api/signals/{signal_id}/review` `{status: revisada|escalada|descartada, justification}` — **HU3**: estado + justificación.
 - `GET /api/tasks` · `POST /api/tasks` — alertas/tareas de investigación (nunca órdenes).
 
 ## Orden de implementación (MVP primero — slices verticales, deploy temprano)
