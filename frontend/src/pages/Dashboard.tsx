@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import ImpactBadge from "../components/ImpactBadge";
+import { STATUS_LABEL } from "../components/ReviewControls";
 import SentimentDonut from "../components/SentimentDonut";
 import Skeleton from "../components/Skeleton";
 import type { Impact, Instrument, Signal } from "../types";
@@ -147,7 +148,9 @@ export default function Dashboard() {
                     <td className="py-2 font-mono-data text-mono-data text-on-surface">
                       {Math.round(s.confidence * 100)}%
                     </td>
-                    <td className="py-2 text-label-sm text-on-surface-variant">{s.review_status}</td>
+                    <td className="py-2 text-label-sm text-on-surface-variant">
+                      {STATUS_LABEL[s.review_status]}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -157,7 +160,7 @@ export default function Dashboard() {
 
         <div className="bg-surface-container border border-outline-variant rounded-xl p-5 flex flex-col items-center">
           <h3 className="font-headline-md text-headline-md text-on-surface mb-4 self-start">
-            Distribución de sentimiento
+            Señales por tipo de impacto
           </h3>
           {loading ? (
             <Skeleton className="w-[140px] h-[140px] rounded-full" />

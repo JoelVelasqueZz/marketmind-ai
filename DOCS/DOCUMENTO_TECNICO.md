@@ -81,7 +81,7 @@ flowchart TB
 
     UI1 -->|"GET /api/news"| API
     UI2 -->|"POST /api/signals/generate"| API
-    UI3 -->|"POST /api/briefing/generate<br/>POST /api/signals/:id/review"| API
+    UI3 -->|"POST /api/briefing/generate<br/>POST /api/signals/{signal_id}/review"| API
 
     API --> SVC
     SVC --> A1

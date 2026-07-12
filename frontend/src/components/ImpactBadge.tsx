@@ -1,10 +1,10 @@
 import type { Impact } from "../types";
 
 const STYLES: Record<Impact, { bg: string; text: string; dot: string; label: string }> = {
-  positive: { bg: "bg-primary-container/20", text: "text-primary-container", dot: "bg-primary", label: "Positive" },
-  negative: { bg: "bg-error-container/20", text: "text-error", dot: "bg-error", label: "Negative" },
+  positive: { bg: "bg-primary-container/20", text: "text-primary-container", dot: "bg-primary", label: "Positivo" },
+  negative: { bg: "bg-error-container/20", text: "text-error", dot: "bg-error", label: "Negativo" },
   neutral: { bg: "bg-surface-variant", text: "text-on-surface-variant", dot: "bg-on-surface-variant", label: "Neutral" },
-  uncertain: { bg: "bg-warning/20", text: "text-warning", dot: "bg-warning", label: "Uncertain" },
+  uncertain: { bg: "bg-warning/20", text: "text-warning", dot: "bg-warning", label: "Incierto" },
 };
 
 export default function ImpactBadge({ impact }: { impact: Impact }) {

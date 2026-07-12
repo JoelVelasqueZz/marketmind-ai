@@ -15,7 +15,7 @@ Plan completo, contexto del hackathon y decisiones de arquitectura: [`DOCS/PLAN.
 
 ## Stack
 
-- **Backend:** FastAPI + SQLModel (SQLite) + LangGraph (orquesta los dos agentes) + Gemini API (motor principal, con Claude como alterno) vía una capa `LLMClient` con `MODE=mock|gemini|claude`.
+- **Backend:** FastAPI + SQLModel (SQLite en local, Postgres/Neon en producción) + LangGraph (orquesta los dos agentes) + Gemini API (motor principal, con Claude y DeepSeek como alternos) vía una capa `LLMClient` con `MODE=mock|gemini|claude|deepseek`.
 - **Frontend:** Vite + React + TypeScript + Tailwind, portado del mockup de diseño `MarketMind AI` (ver `DOCS/marketmind_dashboard_mockup/`).
 - **Datos:** mock curado en `data/` (noticias, precios históricos, watchlists, fuentes), detrás de interfaces `NewsProvider`/`PriceProvider` que permiten enchufar datos en vivo después sin tocar el resto del código.
 
@@ -50,7 +50,7 @@ Cambiar de proveedor es una sola variable de entorno (`LLM_MODE`) en `.env` del 
 
 - **Gemini** (motor principal): `LLM_MODE=gemini`, `GOOGLE_API_KEY=<tu key>`.
 - **Claude** (alterno): `LLM_MODE=claude`, `ANTHROPIC_API_KEY=<tu key>`.
-- **DeepSeek** (alterno gratuito, si se agota la cuota de Gemini): `LLM_MODE=deepseek`, `DEEPSEEK_API_KEY=<tu key>`. Sirve tanto con la [API oficial de DeepSeek](https://platform.deepseek.com/sign_in) (5M tokens gratis de prueba, deja `DEEPSEEK_BASE_URL` como está) como con [OpenRouter](https://openrouter.ai/) (`DEEPSEEK_BASE_URL=https://openrouter.ai/api/v1` + tu key de OpenRouter + `LLM_MODEL=deepseek/deepseek-chat-v3.1:free` o el modelo gratis que esté disponible).
+- **DeepSeek** (alterno, si se agota la cuota de Gemini): `LLM_MODE=deepseek`, `DEEPSEEK_API_KEY=<tu key>`. Recomendado usar la [API oficial de DeepSeek](https://platform.deepseek.com/sign_in) (5M tokens gratis de prueba, deja `DEEPSEEK_BASE_URL` como está) — al momento de escribir esto, [OpenRouter](https://openrouter.ai/) no tenía ningún modelo DeepSeek genuinamente gratis (todos con costo por token), así que verifica su catálogo antes de asumir que hay uno gratis ahí.
 
 ## Estructura
 
@@ -70,4 +70,13 @@ Ver checklist en `DOCS/PLAN.md` → sección Despliegue (Render para el backend 
 
 - **HU1 — Radar:** `GET /api/news` con filtros por tipo/activo/antigüedad, fuente y fecha visibles → página **News Radar**.
 - **HU2 — Señal explicable:** `POST /api/signals/generate` (Analista) → página **AI Analysis**.
-- **HU3 — Briefing con revisión humana:** `POST /api/briefing/generate` (Asesor) + `POST /api/signals/{id}/review` → página **Briefings**. Nunca crea órdenes de compra/venta, solo tareas/alertas.
+- **HU3 — Briefing con revisión humana:** `POST /api/briefing/generate` (Asesor) + `POST /api/signals/{signal_id}/review` → página **Briefings**. Nunca crea órdenes de compra/venta, solo tareas/alertas.
+
+## Documentación
+
+- [`DOCS/DOCUMENTO_TECNICO.md`](DOCS/DOCUMENTO_TECNICO.md) — entregable técnico: arquitectura, track, negocio, integración empresarial.
+- [`DOCS/RECORRIDO_APP.md`](DOCS/RECORRIDO_APP.md) — recorrido de la web página por página, para alguien que no la ha visto.
+- [`DOCS/GLOSARIO.md`](DOCS/GLOSARIO.md) — glosario de términos financieros y de IA usados en el proyecto.
+- [`DOCS/GUION_VIDEO.md`](DOCS/GUION_VIDEO.md) — guión del video de entrega (4 personas, 3 min).
+- [`DOCS/ENTREGA.md`](DOCS/ENTREGA.md) — checklist de los 5 entregables y formato exacto del correo de entrega.
+- [`DOCS/PLAN.md`](DOCS/PLAN.md) — plan de arquitectura y decisiones tomadas durante el desarrollo.

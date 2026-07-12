@@ -4,7 +4,7 @@ import { api } from "../api";
 import ConfidenceRing from "../components/ConfidenceRing";
 import Disclaimer from "../components/Disclaimer";
 import ImpactBadge from "../components/ImpactBadge";
-import ReviewControls from "../components/ReviewControls";
+import ReviewControls, { STATUS_LABEL } from "../components/ReviewControls";
 import Sparkline from "../components/Sparkline";
 import { formatPct } from "../lib/format";
 import type { Instrument, NewsItem, ReviewStatus, Signal } from "../types";
@@ -228,6 +228,7 @@ export default function Signals() {
             <ConfidenceRing confidence={current.confidence} size={96} />
             <div className="w-full">
               <ReviewControls
+                key={current.id}
                 currentStatus={current.review_status}
                 currentJustification={current.review_justification}
                 onSave={(status, justification) => handleReview(current.id, status, justification)}
@@ -255,7 +256,7 @@ export default function Signals() {
               <span className="font-mono-data text-mono-data text-primary">{s.instrument}</span>
               <ImpactBadge impact={s.impact} />
             </div>
-            <span className="text-label-sm text-on-surface-variant">{s.review_status}</span>
+            <span className="text-label-sm text-on-surface-variant">{STATUS_LABEL[s.review_status]}</span>
           </button>
         ))}
       </div>

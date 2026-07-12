@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api";
 import Disclaimer from "../components/Disclaimer";
 import ImpactBadge from "../components/ImpactBadge";
-import ReviewControls from "../components/ReviewControls";
+import ReviewControls, { STATUS_LABEL } from "../components/ReviewControls";
 import { formatPct } from "../lib/format";
 import type { Briefing as BriefingType, ReviewStatus, TaskAlert, Watchlist } from "../types";
 
@@ -67,7 +67,7 @@ export default function Briefing() {
         "**Resumen ejecutivo:**",
         ...item.executive_summary.map((line) => `- ${line}`),
         "",
-        `**Estado de revisión:** ${item.signal.review_status}${
+        `**Estado de revisión:** ${STATUS_LABEL[item.signal.review_status]}${
           item.signal.review_justification ? ` — ${item.signal.review_justification}` : ""
         }`,
         "",
