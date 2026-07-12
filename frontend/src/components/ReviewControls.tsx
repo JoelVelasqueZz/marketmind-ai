@@ -9,10 +9,56 @@ interface ReviewControlsProps {
 
 const STATUS_OPTIONS: ReviewStatus[] = ["pending", "revisada", "escalada", "descartada"];
 
+const STATUS_LABEL: Record<ReviewStatus, string> = {
+  pending: "Pendiente",
+  revisada: "Revisada",
+  escalada: "Escalada",
+  descartada: "Descartada",
+};
+
 export default function ReviewControls({ currentStatus, currentJustification, onSave }: ReviewControlsProps) {
   const [status, setStatus] = useState<ReviewStatus>(currentStatus);
   const [justification, setJustification] = useState(currentJustification ?? "");
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(currentStatus === "pending");
+  const [justSaved, setJustSaved] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await onSave(status, justification);
+      setEditing(false);
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 2500);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!editing) {
+    return (
+      <div className="bg-surface-container-low border border-outline-variant rounded-lg p-3">
+        <div className="flex items-center justify-between gap-3 mb-1">
+          <span className="text-label-sm font-bold text-on-surface uppercase">
+            {STATUS_LABEL[status]}
+          </span>
+          <button
+            className="text-label-sm font-bold text-primary hover:underline"
+            onClick={() => setEditing(true)}
+          >
+            Editar
+          </button>
+        </div>
+        {justification && <p className="text-body-md text-on-surface-variant">{justification}</p>}
+        {justSaved && (
+          <p className="text-label-sm text-success font-bold mt-2 flex items-center gap-1">
+            <span className="material-symbols-outlined text-sm">check_circle</span>
+            Guardado correctamente
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -33,21 +79,14 @@ export default function ReviewControls({ currentStatus, currentJustification, on
         >
           {STATUS_OPTIONS.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {STATUS_LABEL[s]}
             </option>
           ))}
         </select>
         <button
           className="px-4 py-2 bg-primary-container text-on-primary-container text-label-md font-bold rounded-lg disabled:opacity-40"
           disabled={saving || status === "pending"}
-          onClick={async () => {
-            setSaving(true);
-            try {
-              await onSave(status, justification);
-            } finally {
-              setSaving(false);
-            }
-          }}
+          onClick={handleSave}
         >
           {saving ? "Guardando…" : "Guardar"}
         </button>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api";
 import Disclaimer from "../components/Disclaimer";
 import ImpactBadge from "../components/ImpactBadge";
@@ -226,12 +227,22 @@ export default function Briefing() {
                 <p className={`text-body-md text-on-surface mb-2 ${t.status === "done" ? "line-through" : ""}`}>
                   {t.title}
                 </p>
-                <button
-                  className="text-label-sm font-bold text-primary hover:underline"
-                  onClick={() => toggleTask(t)}
-                >
-                  {t.status === "open" ? "Marcar como hecha" : "Reabrir"}
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    className="text-label-sm font-bold text-primary hover:underline"
+                    onClick={() => toggleTask(t)}
+                  >
+                    {t.status === "open" ? "Marcar como hecha" : "Reabrir"}
+                  </button>
+                  {t.signal_id && (
+                    <Link
+                      to={`/analysis?signal=${t.signal_id}`}
+                      className="text-label-sm font-bold text-on-surface-variant hover:underline"
+                    >
+                      Ver análisis
+                    </Link>
+                  )}
+                </div>
               </div>
             ))}
           </div>

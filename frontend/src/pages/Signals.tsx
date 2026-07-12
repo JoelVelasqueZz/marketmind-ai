@@ -70,6 +70,12 @@ export default function Signals() {
   useEffect(() => {
     const newsParam = searchParams.get("news");
     const instrumentParam = searchParams.get("instrument");
+    const signalParam = searchParams.get("signal");
+    if (signalParam) {
+      // Viene del boton "Ver analisis" de una tarea: no genera nada nuevo,
+      // solo busca la senal ya existente (por eso espera a que "history" cargue).
+      return;
+    }
     if (newsParam && instrumentParam) {
       setSelectedInstrument(instrumentParam);
       setSelectedNewsId(newsParam);
@@ -81,6 +87,20 @@ export default function Signals() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  useEffect(() => {
+    const signalParam = searchParams.get("signal");
+    if (!signalParam || history.length === 0 || current?.id === signalParam) return;
+    const found = history.find((s) => s.id === signalParam);
+    if (!found) return;
+    setCurrent(found);
+    setSelectedInstrument(found.instrument);
+    api
+      .getNews({ asset: found.instrument })
+      .then((items) => setCurrentNews(items.find((n) => n.id === found.news_id) ?? null))
+      .catch(() => setCurrentNews(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, history]);
 
   return (
     <div className="pt-24 pb-stack-lg px-container-padding flex-1">
@@ -201,6 +221,14 @@ export default function Signals() {
             <p className="text-body-md text-on-surface-variant text-center">
               Estado de revisión: <span className="text-on-surface font-bold">{current.review_status}</span>
             </p>
+            {current.review_justification && (
+              <div className="w-full bg-surface-container-low border border-outline-variant rounded-lg p-3">
+                <p className="text-label-sm text-on-surface-variant uppercase font-bold mb-1">
+                  Observación del analista
+                </p>
+                <p className="text-body-md text-on-surface">{current.review_justification}</p>
+              </div>
+            )}
           </div>
         </div>
       )}
