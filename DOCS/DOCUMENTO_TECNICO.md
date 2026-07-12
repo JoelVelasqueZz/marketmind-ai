@@ -32,48 +32,56 @@ El propio track cita **Google Finance** y **CoinMarketCap** como referencia. Amb
 
 La diferenciación no es "más datos", sino **convertir la información en una decisión de investigación trazable**, algo que ninguno de los productos de referencia ofrece.
 
-Tercer eje de diferenciación: **contexto financiero y regulatorio local**, explícitamente pedido por el criterio de evaluación "Impacto/Ajuste al Track". Ni Google Finance ni CoinMarketCap cubren Ecuador de forma dedicada. El sistema incluye una watchlist **Ecuador & LatAm** con noticias del Banco Central del Ecuador, la Superintendencia de Bancos (SBS) y medios locales (Primicias), analizadas contra el precio real de un instrumento de referencia (bono soberano Ecuador 2035) — el mismo pipeline explicable de HU1-HU3, aplicado al mercado que más le importa a este jurado.
+Tercer eje de diferenciación: **contexto financiero y regulatorio local**, explícitamente pedido por el criterio de evaluación "Impacto/Ajuste al Track". Ni Google Finance ni CoinMarketCap cubren Ecuador de forma dedicada. El sistema incluye una watchlist **Ecuador & LatAm** con noticias del Banco Central del Ecuador, la Superintendencia de Bancos y medios locales (Primicias), analizadas contra el precio real de un instrumento de referencia (bono soberano Ecuador 2035) — el mismo pipeline explicable de HU1-HU3, aplicado al mercado que más le importa a este jurado. Este caso es además el hilo conductor de la demo: la noticia regulatoria de la Superintendencia impactando al ECU2035 abre el video y recorre las tres historias de usuario.
+
+### Marco regulatorio ecuatoriano
+
+En Ecuador, la actividad bursátil y la asesoría en valores están reguladas por la **Ley de Mercado de Valores** (Libro II del Código Orgánico Monetario y Financiero), con la **Superintendencia de Compañías, Valores y Seguros (SCVS)** como supervisor del mercado de valores y la **Superintendencia de Bancos** como supervisor de las entidades financieras. Ese marco exige que las recomendaciones dirigidas a clientes sean trazables y que no se prometan rendimientos — y el diseño de MarketMind AI lo respeta **por construcción**, no como parche: el sistema no ejecuta ni sugiere órdenes (no realiza intermediación de valores), cada señal lleva un disclaimer explícito de que no constituye asesoría personalizada, la decisión queda siempre en una persona (revisada/escalada/descartada, con justificación y fecha persistidas), y toda señal conserva su evidencia, fuente y timestamp — exactamente la pista de auditoría que un área de compliance necesita para responder ante el regulador por qué se emitió, escaló o descartó una alerta. En este contexto, el human-in-the-loop y la trazabilidad no son features: son requisitos regulatorios locales.
+
+**Modelo de negocio:** SaaS B2B por asiento para mesas de research y áreas de compliance (bancas de inversión, casas de valores, gestoras y fintechs), con precio por analista/mes y un tier enterprise que suma fuentes de datos licenciadas e integración con los sistemas del cliente. El costo marginal por señal es bajo — una llamada LLM que además se deduplica y reutiliza — lo que sostiene márgenes de software desde volúmenes pequeños.
 
 ## 3. Diagrama de arquitectura
 
 ```mermaid
 flowchart TB
     subgraph Cliente["Canal: Web App (React SPA)"]
-        UI1[News Radar — HU1]
-        UI2[AI Analysis — HU2]
-        UI3[Briefings — HU3]
+        UI1["News Radar — HU1"]
+        UI2["AI Analysis — HU2"]
+        UI3["Briefings — HU3"]
     end
 
     subgraph Backend["Backend: FastAPI"]
-        API[Routers REST /api/*]
-        SVC[Services: radar / signals / briefing]
-        DB[(Postgres — Neon\nvia SQLModel/SQLAlchemy\nSignal + review state, Task/Alert)]
+        API["Routers REST /api/*"]
+        SVC["Services: radar / signals / briefing"]
+        DB[("Postgres — Neon<br/>via SQLModel/SQLAlchemy<br/>Signal + review state, Task/Alert")]
     end
 
     subgraph Agentes["Orquestación de agentes: LangGraph (StateGraph)"]
-        A1[Analista de Coyuntura\nde Mercados IA]
-        A2[Asesor Financiero\ne Inversiones IA]
-        A1 -->|señal explicable| A2
+        A1["Analista de Coyuntura<br/>de Mercados IA"]
+        A2["Asesor Financiero<br/>e Inversiones IA"]
+        MON["Nodo de monitoreo<br/>determinista, sin LLM"]
+        A1 -->|"señal clara"| A2
+        A1 -->|"neutral, confianza baja"| MON
     end
 
     subgraph LLM["Capa LLM (provider-agnóstica)"]
-        LLMC[LLMClient\nMODE=mock|gemini|claude|deepseek]
-        GEMINI[Gemini API\n(motor principal)]
-        CLAUDE[Claude API\n(alterno)]
-        DEEPSEEK[DeepSeek API\n(alterno gratuito)]
+        LLMC["LLMClient<br/>MODE=mock &#124; gemini &#124; claude &#124; deepseek"]
+        GEMINI["Gemini API<br/>(motor principal)"]
+        CLAUDE["Claude API<br/>(alterno)"]
+        DEEPSEEK["DeepSeek API<br/>(alterno gratuito)"]
         LLMC --> GEMINI
         LLMC --> CLAUDE
         LLMC --> DEEPSEEK
     end
 
     subgraph Datos["Integraciones externas / datos"]
-        NP[NewsProvider\nMock hoy → NewsAPI/RSS en vivo]
-        PP[PriceProvider\nMock hoy → yfinance/CoinGecko en vivo]
+        NP["NewsProvider<br/>Mock hoy → NewsAPI/RSS en vivo"]
+        PP["PriceProvider<br/>Mock hoy → yfinance/CoinGecko en vivo"]
     end
 
-    UI1 -->|GET /api/news| API
-    UI2 -->|POST /api/signals/generate| API
-    UI3 -->|POST /api/briefing/generate\nPOST /api/signals/:id/review| API
+    UI1 -->|"GET /api/news"| API
+    UI2 -->|"POST /api/signals/generate"| API
+    UI3 -->|"POST /api/briefing/generate<br/>POST /api/signals/:id/review"| API
 
     API --> SVC
     SVC --> A1
@@ -85,7 +93,7 @@ flowchart TB
     SVC --> PP
 ```
 
-**Por qué LangGraph:** modela explícitamente el flujo `Analista → Asesor` como un grafo de estados con nodos puros y testeables por separado (ver `tests/test_analyst_node.py`, `test_advisor_node.py`, `test_agent.py`), en vez de encadenar llamadas sueltas al LLM. Esto es lo que el organizador del hackathon describe como "nivel intermedio" de arquitectura agéntica verificable.
+**Por qué LangGraph:** modela explícitamente el flujo `Analista → Asesor` como un grafo de estados con nodos puros y testeables por separado (ver `tests/test_analyst_node.py`, `test_advisor_node.py`, `test_agent.py`), en vez de encadenar llamadas sueltas al LLM. Y el grafo toma una decisión de orquestación real: una **arista condicional** después del Analista (`route_after_analyst`, `backend/agents/graph.py`) deriva las señales neutrales de confianza < 0.5 a un **nodo de monitoreo determinista** que arma el item de briefing sin gastar la llamada del Asesor — el ruteo está cubierto por tests dedicados (`tests/test_graph_routing.py`, con un LLM fake inyectado a través del estado del grafo). Esto es lo que el organizador del hackathon describe como "nivel intermedio" de arquitectura agéntica verificable.
 
 **Por qué la capa `LLMClient` es provider-agnóstica:** permite construir y demostrar el flujo completo sin necesidad de una API key (`MODE=mock`, respuestas deterministas basadas en las mismas reglas de negocio), y activar Gemini real cambiando una sola variable de entorno (`LLM_MODE=gemini`). Claude y DeepSeek quedan disponibles como alternos con el mismo contrato — útil ante límites de cuota gratuita sin tener que tocar los nodos del grafo ni los prompts.
 
@@ -149,4 +157,4 @@ Siguiendo un enfoque de **Spec-Driven Development** (la especificación es la fu
 
 ## 7. Evidencia de pruebas
 
-Ver `tests/` (pytest): tests de nodos del grafo con LLM mockeado (`test_analyst_node.py`, `test_advisor_node.py`), smoke test del pipeline completo (`test_agent.py`), tests de reintentos ante fallos transitorios del LLM (`test_llm_retry.py`) y tests de los endpoints (`test_api.py`) — incluyendo verificación explícita de que ninguna salida del sistema sugiere una orden de compra/venta, deduplicación de señales/tareas, y casos borde (recursos desconocidos, estados de revisión inválidos, filtros de tareas). **34 tests en total**, corridos automáticamente en cada push vía GitHub Actions (`.github/workflows/ci.yml`, badge visible en el `README.md`). Correr localmente con `pytest` desde la raíz del repo.
+Ver `tests/` (pytest): tests de nodos del grafo con LLM mockeado (`test_analyst_node.py`, `test_advisor_node.py`), smoke test del pipeline completo (`test_agent.py`), tests del ruteo condicional del grafo con LLM fake inyectado (`test_graph_routing.py`), tests de reintentos ante fallos transitorios del LLM (`test_llm_retry.py`) y tests de los endpoints (`test_api.py`) — incluyendo verificación explícita de que ninguna salida del sistema sugiere una orden de compra/venta, deduplicación de señales/tareas, y casos borde (recursos desconocidos, estados de revisión inválidos, filtros de tareas). **38 tests en total**, corridos automáticamente en cada push vía GitHub Actions (`.github/workflows/ci.yml`, badge visible en el `README.md`). Correr localmente con `pytest` desde la raíz del repo.
