@@ -1,6 +1,6 @@
 # Checklist de entrega — Hackathon Agentic Scale (Track 5)
 
-Basado en `DOCS/AgenticScale Entregable.pdf` y `DOCS/Formato de Entregables.docx` (comunicado de TAWS). **Fecha límite: domingo 12 de julio de 2026, 23:59 (Ecuador).** Tras el cierre solo se permiten correcciones menores de bugs, no funcionalidades nuevas.
+Basado en la guía de entregables y el comunicado de formato de correo de TAWS (material de la organización, no incluido en este repo). **Fecha límite: domingo 12 de julio de 2026, 23:59 (Ecuador).** Tras el cierre solo se permiten correcciones menores de bugs, no funcionalidades nuevas.
 
 ## 1. Los 5 entregables obligatorios
 
@@ -34,7 +34,7 @@ Si video, ZIP y documento están en una sola carpeta compartida (Drive/OneDrive)
 ## 3. Antes de enviar — última pasada
 
 - [ ] Recorrer la web en vivo (no localhost) siguiendo [`RECORRIDO_APP.md`](RECORRIDO_APP.md): Dashboard → News Radar → AI Analysis → Briefings → Watchlist.
-- [ ] `pytest` en verde localmente (34 tests) y el badge de CI en verde en GitHub.
+- [ ] `pytest` en verde localmente (39 tests) y el badge de CI en verde en GitHub.
 - [ ] Confirmar que el repo es público (probar el link en una ventana de incógnito).
 - [ ] Confirmar que `DOCUMENTO_TECNICO.md` menciona el uso de Gemini (para calificar a "Best Use of Google Gemini").
 - [ ] Si sobra tiempo: solo los 10 mejores equipos avanzan a la final presencial del **18 de julio en la Biblioteca ESPOL, Edificio 7A** — no es parte de esta entrega, pero conviene tenerlo en el radar.
