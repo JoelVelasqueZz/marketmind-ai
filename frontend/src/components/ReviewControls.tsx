@@ -9,7 +9,7 @@ interface ReviewControlsProps {
 
 const STATUS_OPTIONS: ReviewStatus[] = ["pending", "revisada", "escalada", "descartada"];
 
-const STATUS_LABEL: Record<ReviewStatus, string> = {
+export const STATUS_LABEL: Record<ReviewStatus, string> = {
   pending: "Pendiente",
   revisada: "Revisada",
   escalada: "Escalada",

@@ -1,4 +1,6 @@
-# Guión de demo (video de 3 minutos)
+# Guión de demo (video de 3 minutos) — versión 1 narrador
+
+> Este es el guión de respaldo para un solo narrador. El guión oficial para grabar con 4 personas es [`GUION_VIDEO.md`](GUION_VIDEO.md) — usa este solo si al final graba una sola persona.
 
 Mapea cada criterio de aceptación del PDF del track a un clic concreto en la app. Pensado para grabar directo, sin cortes.
 

@@ -71,3 +71,12 @@ Ver checklist en `DOCS/PLAN.md` → sección Despliegue (Render para el backend 
 - **HU1 — Radar:** `GET /api/news` con filtros por tipo/activo/antigüedad, fuente y fecha visibles → página **News Radar**.
 - **HU2 — Señal explicable:** `POST /api/signals/generate` (Analista) → página **AI Analysis**.
 - **HU3 — Briefing con revisión humana:** `POST /api/briefing/generate` (Asesor) + `POST /api/signals/{id}/review` → página **Briefings**. Nunca crea órdenes de compra/venta, solo tareas/alertas.
+
+## Documentación
+
+- [`DOCS/DOCUMENTO_TECNICO.md`](DOCS/DOCUMENTO_TECNICO.md) — entregable técnico: arquitectura, track, negocio, integración empresarial.
+- [`DOCS/RECORRIDO_APP.md`](DOCS/RECORRIDO_APP.md) — recorrido de la web página por página, para alguien que no la ha visto.
+- [`DOCS/GLOSARIO.md`](DOCS/GLOSARIO.md) — glosario de términos financieros y de IA usados en el proyecto.
+- [`DOCS/GUION_VIDEO.md`](DOCS/GUION_VIDEO.md) — guión del video de entrega (4 personas, 3 min).
+- [`DOCS/ENTREGA.md`](DOCS/ENTREGA.md) — checklist de los 5 entregables y formato exacto del correo de entrega.
+- [`DOCS/PLAN.md`](DOCS/PLAN.md) — plan de arquitectura y decisiones tomadas durante el desarrollo.
