@@ -4,6 +4,7 @@ import { api } from "../api";
 import ConfidenceRing from "../components/ConfidenceRing";
 import Disclaimer from "../components/Disclaimer";
 import ImpactBadge from "../components/ImpactBadge";
+import Sparkline from "../components/Sparkline";
 import { formatPct } from "../lib/format";
 import type { Instrument, NewsItem, Signal } from "../types";
 
@@ -16,6 +17,7 @@ export default function Signals() {
 
   const [current, setCurrent] = useState<Signal | null>(null);
   const [currentNews, setCurrentNews] = useState<NewsItem | null>(null);
+  const [priceHistory, setPriceHistory] = useState<number[]>([]);
   const [history, setHistory] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +55,17 @@ export default function Signals() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (!current) {
+      setPriceHistory([]);
+      return;
+    }
+    api
+      .getPriceHistory(current.instrument, 14)
+      .then((points) => setPriceHistory(points.map((p) => p.close)))
+      .catch(() => setPriceHistory([]));
+  }, [current]);
 
   useEffect(() => {
     const newsParam = searchParams.get("news");
@@ -153,18 +166,21 @@ export default function Signals() {
               ))}
             </ul>
 
-            <div className="bg-surface-container-low rounded-lg p-4 mb-4">
-              <p className="text-label-sm text-on-surface-variant uppercase font-bold mb-1">
-                Comparación de precio
-              </p>
-              <p className="font-mono-data text-mono-data text-on-surface">
-                {current.price_comparison.instrument} {formatPct(current.price_comparison.change_pct)}
-                {" · "}
-                {current.price_comparison.window_days}d
-              </p>
-              <p className="text-body-md text-on-surface-variant mt-1">
-                {current.price_comparison.note}
-              </p>
+            <div className="bg-surface-container-low rounded-lg p-4 mb-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-label-sm text-on-surface-variant uppercase font-bold mb-1">
+                  Comparación de precio
+                </p>
+                <p className="font-mono-data text-mono-data text-on-surface">
+                  {current.price_comparison.instrument} {formatPct(current.price_comparison.change_pct)}
+                  {" · "}
+                  {current.price_comparison.window_days}d
+                </p>
+                <p className="text-body-md text-on-surface-variant mt-1">
+                  {current.price_comparison.note}
+                </p>
+              </div>
+              <Sparkline points={priceHistory} width={120} height={36} />
             </div>
 
             {current.suggested_action && (

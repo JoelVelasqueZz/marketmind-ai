@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from backend.agents.llm import TransientLLMError
 from backend.config import CORS_ORIGINS
 from backend.db import init_db
-from backend.routers import briefing, instruments, news, signals, tasks
+from backend.routers import briefing, instruments, news, prices, signals, tasks
 
 
 @asynccontextmanager
@@ -37,6 +37,7 @@ app.add_middleware(
 
 app.include_router(instruments.router)
 app.include_router(news.router)
+app.include_router(prices.router)
 app.include_router(signals.router)
 app.include_router(briefing.router)
 app.include_router(tasks.router)

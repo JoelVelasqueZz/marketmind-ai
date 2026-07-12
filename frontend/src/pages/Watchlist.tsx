@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import ImpactBadge from "../components/ImpactBadge";
+import Sparkline from "../components/Sparkline";
 import { formatPct, formatPrice } from "../lib/format";
 import type { AssetOverview, Watchlist as WatchlistType, WatchlistOverview } from "../types";
 
@@ -37,6 +38,7 @@ export default function Watchlist() {
   const [watchlists, setWatchlists] = useState<WatchlistType[]>([]);
   const [selected, setSelected] = useState("");
   const [overview, setOverview] = useState<WatchlistOverview | null>(null);
+  const [histories, setHistories] = useState<Record<string, number[]>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,7 +55,17 @@ export default function Watchlist() {
     setError(null);
     api
       .getWatchlistOverview(selected)
-      .then(setOverview)
+      .then((result) => {
+        setOverview(result);
+        Promise.all(
+          result.assets.map((a) =>
+            api
+              .getPriceHistory(a.symbol, 14)
+              .then((points) => [a.symbol, points.map((p) => p.close)] as const)
+              .catch(() => [a.symbol, []] as const),
+          ),
+        ).then((entries) => setHistories(Object.fromEntries(entries)));
+      })
       .catch((err) => setError(String(err)))
       .finally(() => setLoading(false));
   }, [selected]);
@@ -131,6 +143,7 @@ export default function Watchlist() {
               <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">Activo</th>
               <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">Precio</th>
               <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">Cambio 1d</th>
+              <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">14 días</th>
               <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">Señal IA</th>
               <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">Confianza</th>
               <th className="px-4 py-3 text-label-sm text-on-surface-variant uppercase">Acciones</th>
@@ -139,7 +152,7 @@ export default function Watchlist() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-on-surface-variant">
+                <td colSpan={7} className="px-4 py-6 text-center text-on-surface-variant">
                   Cargando…
                 </td>
               </tr>
@@ -164,6 +177,9 @@ export default function Watchlist() {
                     }`}
                   >
                     {a.change_pct_1d !== null ? formatPct(a.change_pct_1d) : "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Sparkline points={histories[a.symbol] ?? []} />
                   </td>
                   <td className="px-4 py-3">
                     {a.signal ? <ImpactBadge impact={a.signal.impact} /> : (

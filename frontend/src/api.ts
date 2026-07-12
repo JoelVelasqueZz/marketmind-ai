@@ -2,6 +2,7 @@ import type {
   Briefing,
   Instrument,
   NewsItem,
+  PricePoint,
   Signal,
   TaskAlert,
   Watchlist,
@@ -70,6 +71,9 @@ export const api = {
     request<Briefing>(`/api/briefing/generate?watchlist=${encodeURIComponent(watchlistId)}`, {
       method: "POST",
     }),
+
+  getPriceHistory: (symbol: string, days = 14) =>
+    request<PricePoint[]>(`/api/prices/${encodeURIComponent(symbol)}?days=${days}`),
 
   getTasks: () => request<TaskAlert[]>("/api/tasks"),
 

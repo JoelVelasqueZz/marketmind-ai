@@ -28,6 +28,11 @@ export interface PriceComparison {
   note: string;
 }
 
+export interface PricePoint {
+  date: string;
+  close: number;
+}
+
 export interface Signal {
   id: string;
   news_id: string;

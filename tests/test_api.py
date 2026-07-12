@@ -8,7 +8,23 @@ def test_instruments(client):
     r = client.get("/api/instruments")
     assert r.status_code == 200
     symbols = {i["symbol"] for i in r.json()}
-    assert {"AAPL", "BTC", "NVDA"}.issubset(symbols)
+    assert {"AAPL", "BTC", "NVDA", "ECU2035"}.issubset(symbols)
+
+
+def test_price_history(client):
+    r = client.get("/api/prices/BTC", params={"days": 7})
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body) == 7
+    for point in body:
+        assert point["date"]
+        assert point["close"] > 0
+
+
+def test_price_history_unknown_symbol_returns_empty(client):
+    r = client.get("/api/prices/DOES-NOT-EXIST")
+    assert r.status_code == 200
+    assert r.json() == []
 
 
 def test_news_filters_by_asset(client):
