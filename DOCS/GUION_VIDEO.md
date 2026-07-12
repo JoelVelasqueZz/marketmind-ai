@@ -14,7 +14,7 @@ Guion para 4 personas, ~3 minutos totales. Cada bloque trae el texto exacto para
 
 ## Persona 2 — Arquitectura + antialucinación + News Radar (0:30 – 1:10)
 
-**[PANTALLA: News Radar → filtrar Asset → ECU2035 → mostrar la card de la Superintendencia de Bancos con fuente y fecha]**
+**[PANTALLA: News Radar sin filtrar (que se note la mezcla de fuentes internacionales y locales) → filtrar Asset → ECU2035 → mostrar la card de la Superintendencia de Bancos con fuente y fecha]**
 
 > "La arquitectura son dos agentes orquestados con **LangGraph**: el **Analista de Coyuntura**, que cruza cada noticia con el precio real del instrumento, y el **Asesor Financiero**, que arma el briefing. Y el grafo decide de verdad: si una señal es neutral y de baja confianza, **ni siquiera gasta la llamada del Asesor** — queda en monitoreo.
 >
@@ -26,7 +26,7 @@ Guion para 4 personas, ~3 minutos totales. Cada bloque trae el texto exacto para
 
 ## Persona 3 — Demo: señal Superintendencia → ECU2035 + Briefing (1:10 – 2:05)
 
-**[PANTALLA: clic en "Ver análisis" de la noticia de la Superintendencia → señal sobre ECU2035 → Briefings con Ecuador & LatAm → panel de Tareas]**
+**[PANTALLA: clic en "Ver análisis" de la noticia de la Superintendencia → señal sobre ECU2035 → escribir observación, elegir "Revisada" y Guardar (se ve "✓ Guardado correctamente") → Briefings con Ecuador & LatAm → panel de Tareas]**
 
 > "Tomamos la noticia real del regulador: la Superintendencia de Bancos exige más liquidez a los bancos. El Analista clasifica el impacto sobre el bono **ECU2035** con su nivel de confianza, evidencia concreta, y lo compara contra el movimiento real de precio del bono.
 >
