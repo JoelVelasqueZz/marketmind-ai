@@ -18,7 +18,7 @@ Plan completo, contexto del hackathon y decisiones de arquitectura: [`DOCS/PLAN.
 ## Stack
 
 - **Backend:** FastAPI + SQLModel (SQLite en local, Postgres/Neon en producción) + LangGraph (orquesta los dos agentes) + Gemini API (motor principal, con Claude y DeepSeek como alternos) vía una capa `LLMClient` con `MODE=mock|gemini|claude|deepseek`.
-- **Frontend:** Vite + React + TypeScript + Tailwind, portado del mockup de diseño `MarketMind AI` (ver `DOCS/marketmind_dashboard_mockup/`).
+- **Frontend:** Vite + React + TypeScript + Tailwind, portado del mockup de diseño `MarketMind AI` (referencia visual local del equipo, no versionada en el repo).
 - **Datos:** mock curado en `data/` (noticias, precios históricos, watchlists, fuentes), detrás de interfaces `NewsProvider`/`PriceProvider` que permiten enchufar datos en vivo después sin tocar el resto del código.
 
 ## Correr en local
