@@ -4,7 +4,7 @@ import { api } from "../api";
 import ImpactBadge from "../components/ImpactBadge";
 import SentimentDonut from "../components/SentimentDonut";
 import Skeleton from "../components/Skeleton";
-import type { Impact, Instrument, NewsItem, Signal } from "../types";
+import type { Impact, Instrument, Signal } from "../types";
 
 const NAV_CARDS = [
   { to: "/radar", title: "News Radar", desc: "HU1 · Noticias por activo, sector o tema", icon: "analytics" },
@@ -15,24 +15,25 @@ const NAV_CARDS = [
 const EMPTY_COUNTS: Record<Impact, number> = { positive: 0, negative: 0, neutral: 0, uncertain: 0 };
 
 export default function Dashboard() {
-  const [newsToday, setNewsToday] = useState<NewsItem[]>([]);
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
-      api.getNews({ max_age_days: 1 }).catch(() => []),
       api.getInstruments().catch(() => []),
       api.getSignals().catch(() => []),
-    ]).then(([news, instrumentsList, signalsList]) => {
-      setNewsToday(news);
+    ]).then(([instrumentsList, signalsList]) => {
       setInstruments(instrumentsList);
       setSignals(signalsList);
       setLoading(false);
     });
   }, []);
 
+  // Noticias distintas que ya tienen al menos una senal generada (no "noticias
+  // publicadas en las ultimas 24h" — los datos mock tienen fechas fijas, asi que
+  // ese filtro casi siempre da 0 sin importar cuanta actividad real haya).
+  const newsAnalyzedCount = new Set(signals.map((s) => s.news_id)).size;
   const positiveCount = signals.filter((s) => s.impact === "positive").length;
   const sentimentCounts = signals.reduce(
     (acc, s) => ({ ...acc, [s.impact]: acc[s.impact] + 1 }),
@@ -78,9 +79,9 @@ export default function Dashboard() {
           <>
             <div className="bg-surface-container border border-outline-variant rounded-xl p-4">
               <p className="text-label-sm text-on-surface-variant uppercase font-bold mb-1">
-                Noticias analizadas hoy
+                Noticias analizadas
               </p>
-              <p className="font-display-md text-display-md text-on-surface">{newsToday.length}</p>
+              <p className="font-display-md text-display-md text-on-surface">{newsAnalyzedCount}</p>
             </div>
             <div className="bg-surface-container border border-outline-variant rounded-xl p-4">
               <p className="text-label-sm text-on-surface-variant uppercase font-bold mb-1">
