@@ -39,6 +39,17 @@ En Render, `CORS_ORIGINS` sigue en `*` (funciona bien, verificado). Si se quiere
 
 Abre https://marketmind-ai-three.vercel.app en el navegador y repite el recorrido de las 3 páginas (Radar, AI Analysis, Briefings) — debe verse igual que en local.
 
+## 6. Base de datos persistente con Neon (Postgres gratis)
+
+Render free tier no soporta disco persistente, así que por defecto la app usa SQLite dentro del contenedor: se borra cada vez que el servicio se reinicia (redeploy, o "dormir" tras ~15 min sin uso en el plan gratis). Para que las señales/tareas sobrevivan a eso:
+
+1. Crea una cuenta gratis en https://neon.tech y un proyecto nuevo (sin tarjeta).
+2. Copia la **connection string** que te da Neon (formato `postgresql://usuario:password@host.neon.tech/dbname?sslmode=require`).
+3. En Render → servicio `track5-backend` → **Environment** → agrega `DATABASE_URL` con esa connection string → **Save Changes** (redespliega solo).
+4. Verifica: genera una señal en la web, espera unos minutos (o fuerza un redeploy manual), recarga — la señal debe seguir ahí.
+
+No hace falta tocar código: `backend/db.py` ya usa `DATABASE_URL` de forma genérica (SQLite u otra base compatible con SQLAlchemy), y `psycopg2-binary` (driver de Postgres) ya está en `requirements.txt`. Si `DATABASE_URL` no se configura, cae automáticamente al SQLite efímero de siempre.
+
 ## Migrar a otro host (si un compañero consigue uno de pago)
 
 El `Dockerfile` es portable: cualquier plataforma que soporte "deploy from Dockerfile" (Railway, Fly.io, un VPS, etc.) sirve sin cambiar código — solo apunta el nuevo servicio al mismo `Dockerfile` y copia las mismas variables de entorno.

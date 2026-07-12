@@ -14,5 +14,9 @@ services:
         sync: false
       - key: GOOGLE_API_KEY
         sync: false
+      # Postgres persistente (ej. Neon) en vez del SQLite efimero del contenedor.
+      # Si se deja vacio, cae al SQLite por defecto definido en el Dockerfile.
+      - key: DATABASE_URL
+        sync: false
       - key: CORS_ORIGINS
         value: "*"
