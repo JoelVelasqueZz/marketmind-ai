@@ -7,5 +7,6 @@
   { "symbol": "ETH", "name": "Ethereum", "type": "crypto", "sector": "Crypto" },
   { "symbol": "HYG", "name": "iShares High Yield Corporate Bond ETF", "type": "credit", "sector": "Fixed Income" },
   { "symbol": "TLT", "name": "iShares 20+ Year Treasury Bond ETF", "type": "credit", "sector": "Fixed Income" },
-  { "symbol": "EURUSD", "name": "Euro / US Dollar", "type": "other", "sector": "Macro / FX" }
+  { "symbol": "EURUSD", "name": "Euro / US Dollar", "type": "other", "sector": "Macro / FX" },
+  { "symbol": "ECU2035", "name": "Bono Soberano Ecuador 2035", "type": "credit", "sector": "Macro / Ecuador" }
 ]

@@ -4,5 +4,7 @@
   { "name": "CNBC", "category": "broadcast" },
   { "name": "CoinDesk", "category": "crypto" },
   { "name": "Financial Times", "category": "wire" },
-  { "name": "WSJ", "category": "wire" }
+  { "name": "WSJ", "category": "wire" },
+  { "name": "Banco Central del Ecuador", "category": "regulator" },
+  { "name": "Primicias", "category": "local" }
 ]

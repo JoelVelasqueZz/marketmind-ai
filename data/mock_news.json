@@ -238,5 +238,55 @@
     "instruments": ["ETH"],
     "sector": "Crypto",
     "topic": "On-chain"
+  },
+  {
+    "id": "n025",
+    "headline": "Banco Central del Ecuador reporta incremento en reservas internacionales",
+    "summary": "El BCE informo que las reservas internacionales se ubicaron en niveles solidos, respaldando la estabilidad del esquema de dolarizacion en medio de un entorno externo desafiante.",
+    "source": "Banco Central del Ecuador",
+    "published_at": "2026-07-11T12:00:00Z",
+    "instruments": ["ECU2035"],
+    "sector": "Macro / Ecuador",
+    "topic": "Reservas internacionales"
+  },
+  {
+    "id": "n026",
+    "headline": "SBS exige mayor colchon de liquidez a bancos medianos tras revision de riesgo",
+    "summary": "La Superintendencia de Bancos endurecio requisitos de liquidez para un grupo de entidades medianas, citando exposicion a cartera vencida en sectores especificos.",
+    "source": "Primicias",
+    "published_at": "2026-07-10T15:30:00Z",
+    "instruments": ["ECU2035"],
+    "sector": "Macro / Ecuador",
+    "topic": "Regulacion bancaria"
+  },
+  {
+    "id": "n027",
+    "headline": "FMI confirma revision favorable y desembolso de nueva tranche para Ecuador",
+    "summary": "El directorio del FMI aprobo la revision del programa vigente, habilitando un nuevo desembolso condicionado al cumplimiento de metas fiscales.",
+    "source": "Reuters",
+    "published_at": "2026-07-09T14:00:00Z",
+    "instruments": ["ECU2035"],
+    "sector": "Macro / Ecuador",
+    "topic": "FMI"
+  },
+  {
+    "id": "n028",
+    "headline": "Remesas hacia Ecuador crecen y sostienen liquidez en la economia local",
+    "summary": "El flujo de remesas registro un incremento interanual, un factor que analistas citan como soporte adicional para la liquidez en dolares del sistema.",
+    "source": "Primicias",
+    "published_at": "2026-07-07T10:00:00Z",
+    "instruments": ["ECU2035"],
+    "sector": "Macro / Ecuador",
+    "topic": "Remesas"
+  },
+  {
+    "id": "n029",
+    "headline": "Bonos soberanos de America Latina suben tras señales de pausa en tasas de la Fed",
+    "summary": "El apetito por riesgo emergente mejoro en la region luego de comentarios de la Reserva Federal que redujeron las expectativas de nuevas subidas de tasas.",
+    "source": "Bloomberg",
+    "published_at": "2026-07-05T09:30:00Z",
+    "instruments": ["ECU2035"],
+    "sector": "Macro / Ecuador",
+    "topic": "Mercados emergentes"
   }
 ]

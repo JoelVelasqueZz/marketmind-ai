@@ -30,6 +30,8 @@ El propio track cita **Google Finance** y **CoinMarketCap** como referencia. Amb
 
 La diferenciación no es "más datos", sino **convertir la información en una decisión de investigación trazable**, algo que ninguno de los productos de referencia ofrece.
 
+Tercer eje de diferenciación: **contexto financiero y regulatorio local**, explícitamente pedido por el criterio de evaluación "Impacto/Ajuste al Track". Ni Google Finance ni CoinMarketCap cubren Ecuador de forma dedicada. El sistema incluye una watchlist **Ecuador & LatAm** con noticias del Banco Central del Ecuador, la Superintendencia de Bancos (SBS) y medios locales (Primicias), analizadas contra el precio real de un instrumento de referencia (bono soberano Ecuador 2035) — el mismo pipeline explicable de HU1-HU3, aplicado al mercado que más le importa a este jurado.
+
 ## 3. Diagrama de arquitectura
 
 ```mermaid
