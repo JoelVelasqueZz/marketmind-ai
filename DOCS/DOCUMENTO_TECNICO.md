@@ -57,10 +57,10 @@ flowchart TB
     end
 
     subgraph LLM["Capa LLM (provider-agnóstica)"]
-        LLMC[LLMClient\nMODE=mock|gemini|claude|deepseek]
-        GEMINI[Gemini API\n(motor principal)]
-        CLAUDE[Claude API\n(alterno)]
-        DEEPSEEK[DeepSeek API\n(alterno gratuito)]
+        LLMC["LLMClient\nMODE=mock/gemini/claude/deepseek"]
+        GEMINI["Gemini API\n(motor principal)"]
+        CLAUDE["Claude API\n(alterno)"]
+        DEEPSEEK["DeepSeek API\n(alterno gratuito)"]
         LLMC --> GEMINI
         LLMC --> CLAUDE
         LLMC --> DEEPSEEK
