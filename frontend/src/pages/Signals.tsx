@@ -4,9 +4,10 @@ import { api } from "../api";
 import ConfidenceRing from "../components/ConfidenceRing";
 import Disclaimer from "../components/Disclaimer";
 import ImpactBadge from "../components/ImpactBadge";
+import ReviewControls from "../components/ReviewControls";
 import Sparkline from "../components/Sparkline";
 import { formatPct } from "../lib/format";
-import type { Instrument, NewsItem, Signal } from "../types";
+import type { Instrument, NewsItem, ReviewStatus, Signal } from "../types";
 
 export default function Signals() {
   const [searchParams] = useSearchParams();
@@ -37,6 +38,13 @@ export default function Signals() {
       setSelectedNewsId(items[0]?.id ?? "");
     });
   }, [selectedInstrument]);
+
+  async function handleReview(signalId: string, status: ReviewStatus, justification: string) {
+    if (status === "pending") return;
+    const updated = await api.reviewSignal(signalId, status, justification);
+    setCurrent((prev) => (prev && prev.id === signalId ? updated : prev));
+    setHistory((prev) => prev.map((s) => (s.id === signalId ? updated : s)));
+  }
 
   async function generate(newsId: string, instrument: string) {
     setLoading(true);
@@ -218,17 +226,13 @@ export default function Signals() {
               Confianza
             </p>
             <ConfidenceRing confidence={current.confidence} size={96} />
-            <p className="text-body-md text-on-surface-variant text-center">
-              Estado de revisión: <span className="text-on-surface font-bold">{current.review_status}</span>
-            </p>
-            {current.review_justification && (
-              <div className="w-full bg-surface-container-low border border-outline-variant rounded-lg p-3">
-                <p className="text-label-sm text-on-surface-variant uppercase font-bold mb-1">
-                  Observación del analista
-                </p>
-                <p className="text-body-md text-on-surface">{current.review_justification}</p>
-              </div>
-            )}
+            <div className="w-full">
+              <ReviewControls
+                currentStatus={current.review_status}
+                currentJustification={current.review_justification}
+                onSave={(status, justification) => handleReview(current.id, status, justification)}
+              />
+            </div>
           </div>
         </div>
       )}
