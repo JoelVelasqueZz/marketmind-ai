@@ -50,6 +50,8 @@ Render free tier no soporta disco persistente, así que por defecto la app usa S
 
 No hace falta tocar código: `backend/db.py` ya usa `DATABASE_URL` de forma genérica (SQLite u otra base compatible con SQLAlchemy), y `psycopg2-binary` (driver de Postgres) ya está en `requirements.txt`. Si `DATABASE_URL` no se configura, cae automáticamente al SQLite efímero de siempre.
 
+Estado: ✅ `DATABASE_URL` ya configurado con Neon en Render (Postgres 18, región AWS us-east-1). Verificado generando una señal real y confirmando que sobrevive a un redeploy completo del servicio.
+
 ## Migrar a otro host (si un compañero consigue uno de pago)
 
 El `Dockerfile` es portable: cualquier plataforma que soporte "deploy from Dockerfile" (Railway, Fly.io, un VPS, etc.) sirve sin cambiar código — solo apunta el nuevo servicio al mismo `Dockerfile` y copia las mismas variables de entorno.
