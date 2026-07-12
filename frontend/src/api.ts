@@ -1,5 +1,6 @@
 import type {
   Briefing,
+  Health,
   Instrument,
   NewsItem,
   PricePoint,
@@ -42,6 +43,8 @@ function toQuery<T extends object>(params: T): string {
 }
 
 export const api = {
+  getHealth: () => request<Health>("/api/health"),
+
   getInstruments: () => request<Instrument[]>("/api/instruments"),
 
   getNews: (filters: NewsFilters = {}) =>

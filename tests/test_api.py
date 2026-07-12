@@ -1,7 +1,9 @@
 def test_health(client):
+    from backend.config import LLM_MODE
+
     r = client.get("/api/health")
     assert r.status_code == 200
-    assert r.json() == {"status": "ok"}
+    assert r.json() == {"status": "ok", "llm_mode": LLM_MODE}
 
 
 def test_instruments(client):
@@ -82,6 +84,25 @@ def test_signal_generate_unknown_news_returns_404(client):
     assert r.status_code == 404
 
 
+def test_signal_review_unknown_signal_returns_404(client):
+    r = client.post(
+        "/api/signals/does-not-exist/review",
+        json={"status": "revisada", "justification": "n/a"},
+    )
+    assert r.status_code == 404
+
+
+def test_signal_review_invalid_status_returns_422(client):
+    r1 = client.post("/api/signals/generate", json={"news_id": "n002", "instrument": "NVDA"})
+    signal_id = r1.json()["id"]
+
+    r2 = client.post(
+        f"/api/signals/{signal_id}/review",
+        json={"status": "comprar", "justification": "no deberia aceptar esto"},
+    )
+    assert r2.status_code == 422
+
+
 def test_signal_generate_reuses_existing_by_default(client):
     r1 = client.post("/api/signals/generate", json={"news_id": "n004", "instrument": "BTC"})
     r2 = client.post("/api/signals/generate", json={"news_id": "n004", "instrument": "BTC"})
@@ -144,6 +165,29 @@ def test_task_complete_unknown_returns_404(client):
     assert r.status_code == 404
 
 
+def test_task_reopen_unknown_returns_404(client):
+    r = client.post("/api/tasks/does-not-exist/reopen")
+    assert r.status_code == 404
+
+
+def test_task_list_filters_by_status(client):
+    r1 = client.post(
+        "/api/tasks",
+        json={"instrument": "AAPL", "title": "Tarea abierta", "description": "desc"},
+    )
+    r2 = client.post(
+        "/api/tasks",
+        json={"instrument": "AAPL", "title": "Tarea que se completa", "description": "desc"},
+    )
+    client.post(f"/api/tasks/{r2.json()['id']}/complete")
+
+    open_tasks = client.get("/api/tasks", params={"status": "open"}).json()
+    done_tasks = client.get("/api/tasks", params={"status": "done"}).json()
+
+    assert {t["id"] for t in open_tasks} == {r1.json()["id"]}
+    assert {t["id"] for t in done_tasks} == {r2.json()["id"]}
+
+
 def test_watchlist_overview_includes_price_and_signal(client):
     client.post("/api/signals/generate", json={"news_id": "n004", "instrument": "BTC"})
 
@@ -165,6 +209,11 @@ def test_watchlist_overview_includes_price_and_signal(client):
 
 def test_watchlist_overview_unknown_returns_404(client):
     r = client.get("/api/briefing/watchlists/does-not-exist/overview")
+    assert r.status_code == 404
+
+
+def test_briefing_generate_unknown_watchlist_returns_404(client):
+    r = client.post("/api/briefing/generate", params={"watchlist": "does-not-exist"})
     assert r.status_code == 404
 
 

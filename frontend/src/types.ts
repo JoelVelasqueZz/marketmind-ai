@@ -93,6 +93,11 @@ export interface WatchlistOverview {
   assets: AssetOverview[];
 }
 
+export interface Health {
+  status: string;
+  llm_mode: "mock" | "gemini" | "claude" | "deepseek";
+}
+
 export interface TaskAlert {
   id: string;
   signal_id?: string | null;

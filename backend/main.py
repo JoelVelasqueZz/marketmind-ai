@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.agents.llm import TransientLLMError
-from backend.config import CORS_ORIGINS
+from backend.config import CORS_ORIGINS, LLM_MODE
 from backend.db import init_db
 from backend.routers import briefing, instruments, news, prices, signals, tasks
 
@@ -58,4 +58,4 @@ async def transient_llm_error_handler(request: Request, exc: TransientLLMError):
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "llm_mode": LLM_MODE}

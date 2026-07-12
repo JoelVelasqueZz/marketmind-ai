@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import LlmModeBadge from "./LlmModeBadge";
 
 interface TopbarProps {
   placeholder?: string;
@@ -39,6 +40,7 @@ export default function Topbar({ placeholder = "Buscar noticias, tickers o event
         </div>
       </div>
       <div className="flex items-center gap-stack-md">
+        <LlmModeBadge />
         <button className="p-2 text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 rounded-full">
           <span className="material-symbols-outlined">notifications</span>
         </button>

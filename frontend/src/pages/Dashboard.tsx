@@ -40,6 +40,23 @@ export default function Dashboard() {
   );
   const recentActivity = signals.slice(0, 5);
 
+  // Track record: ¿la direccion que clasifico el Analista coincide con el movimiento de
+  // precio real que se le mostro? "uncertain" queda fuera del calculo a proposito, porque
+  // ahi el propio agente ya declaro que no hay evidencia suficiente para tomar postura.
+  const scoredMatches = signals
+    .map((s) => {
+      const pct = s.price_comparison.change_pct;
+      if (s.impact === "positive") return pct > 0;
+      if (s.impact === "negative") return pct < 0;
+      if (s.impact === "neutral") return Math.abs(pct) < 1;
+      return null;
+    })
+    .filter((m): m is boolean => m !== null);
+  const trackRecordPct =
+    scoredMatches.length > 0
+      ? Math.round((scoredMatches.filter(Boolean).length / scoredMatches.length) * 100)
+      : null;
+
   return (
     <div className="pt-24 pb-stack-lg px-container-padding flex-1">
       <h2 className="font-display-md text-display-md text-on-surface font-bold mb-2">
@@ -49,9 +66,10 @@ export default function Dashboard() {
         Monitorea noticias, analiza impacto y genera briefings con IA para revisión humana — Track 5.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-stack-lg">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-stack-lg">
         {loading ? (
           <>
+            <Skeleton className="h-24" />
             <Skeleton className="h-24" />
             <Skeleton className="h-24" />
             <Skeleton className="h-24" />
@@ -75,6 +93,17 @@ export default function Dashboard() {
                 Señales positivas
               </p>
               <p className="font-display-md text-display-md text-on-surface">{positiveCount}</p>
+            </div>
+            <div
+              className="bg-surface-container border border-outline-variant rounded-xl p-4"
+              title="Coincidencia direccional entre la clasificacion del Analista y el movimiento de precio registrado. No es una prediccion ni garantia de resultados futuros."
+            >
+              <p className="text-label-sm text-on-surface-variant uppercase font-bold mb-1">
+                Track record
+              </p>
+              <p className="font-display-md text-display-md text-on-surface">
+                {trackRecordPct === null ? "—" : `${trackRecordPct}%`}
+              </p>
             </div>
           </>
         )}

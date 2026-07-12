@@ -46,6 +46,42 @@ export default function Briefing() {
     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
   }
 
+  function downloadBriefing(b: BriefingType) {
+    const lines: string[] = [
+      `# Executive Briefing — ${b.watchlist_name}`,
+      `_Generado: ${new Date(b.generated_at).toLocaleString("es-EC")}_`,
+      "",
+    ];
+    for (const item of b.items) {
+      lines.push(
+        `## ${item.instrument} — ${item.signal.impact.toUpperCase()} (confianza ${Math.round(item.signal.confidence * 100)}%)`,
+        `**Noticia:** ${item.news_headline}`,
+        `**Movimiento de precio:** ${formatPct(item.price_change_pct)}`,
+        "",
+        `**Acción de investigación sugerida:** ${item.research_action}`,
+        "",
+        "**Resumen ejecutivo:**",
+        ...item.executive_summary.map((line) => `- ${line}`),
+        "",
+        `**Estado de revisión:** ${item.signal.review_status}${
+          item.signal.review_justification ? ` — ${item.signal.review_justification}` : ""
+        }`,
+        "",
+        "---",
+        "",
+      );
+    }
+    lines.push(`> ${b.disclaimer}`);
+
+    const blob = new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `briefing-${b.watchlist_id}-${b.generated_at.slice(0, 10)}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function handleReview(signalId: string, status: ReviewStatus, justification: string) {
     if (status === "pending") return;
     await api.reviewSignal(signalId, status, justification);
@@ -95,6 +131,14 @@ export default function Briefing() {
             onClick={() => generate(selected)}
           >
             {loading ? "Generando…" : "Generar briefing"}
+          </button>
+          <button
+            className="px-4 py-2 bg-surface-container border border-outline-variant text-on-surface text-label-md font-bold rounded-lg disabled:opacity-40"
+            disabled={!briefing}
+            onClick={() => briefing && downloadBriefing(briefing)}
+            title="Descargar este briefing como archivo Markdown"
+          >
+            Descargar (.md)
           </button>
         </div>
       </div>
