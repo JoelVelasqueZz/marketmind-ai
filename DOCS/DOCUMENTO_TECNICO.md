@@ -1,5 +1,7 @@
 # Documento Técnico — MarketMind AI (Track 5)
 
+> **Uso de Google Gemini:** este proyecto usa la **API de Gemini** (`gemini-flash-latest`) como motor principal de los dos agentes de IA — el Analista de Coyuntura de Mercados y el Asesor Financiero e Inversiones corren sobre Gemini en producción. La capa `LLMClient` (`backend/agents/llm.py`) es provider-agnóstica (Claude y DeepSeek quedan disponibles como alternos con el mismo contrato, cambiando una sola variable de entorno), pero el motor con el que se demuestra el producto es Gemini. Aplica al premio **"Best Use of Google Gemini"**.
+
 ## 1. Track asignado
 
 **Track 5 — Inteligencia de Mercado y Recomendaciones Informadas por Noticias.**
@@ -45,7 +47,7 @@ flowchart TB
     subgraph Backend["Backend: FastAPI"]
         API[Routers REST /api/*]
         SVC[Services: radar / signals / briefing]
-        DB[(SQLite / SQLModel\nSignal + review state, Task/Alert)]
+        DB[(Postgres — Neon\nvia SQLModel/SQLAlchemy\nSignal + review state, Task/Alert)]
     end
 
     subgraph Agentes["Orquestación de agentes: LangGraph (StateGraph)"]
@@ -55,11 +57,13 @@ flowchart TB
     end
 
     subgraph LLM["Capa LLM (provider-agnóstica)"]
-        LLMC[LLMClient\nMODE=mock|gemini|claude]
+        LLMC[LLMClient\nMODE=mock|gemini|claude|deepseek]
         GEMINI[Gemini API\n(motor principal)]
         CLAUDE[Claude API\n(alterno)]
+        DEEPSEEK[DeepSeek API\n(alterno gratuito)]
         LLMC --> GEMINI
         LLMC --> CLAUDE
+        LLMC --> DEEPSEEK
     end
 
     subgraph Datos["Integraciones externas / datos"]
@@ -83,7 +87,9 @@ flowchart TB
 
 **Por qué LangGraph:** modela explícitamente el flujo `Analista → Asesor` como un grafo de estados con nodos puros y testeables por separado (ver `tests/test_analyst_node.py`, `test_advisor_node.py`, `test_agent.py`), en vez de encadenar llamadas sueltas al LLM. Esto es lo que el organizador del hackathon describe como "nivel intermedio" de arquitectura agéntica verificable.
 
-**Por qué la capa `LLMClient` es provider-agnóstica:** permite construir y demostrar el flujo completo sin necesidad de una API key (`MODE=mock`, respuestas deterministas basadas en las mismas reglas de negocio), y activar Gemini real cambiando una sola variable de entorno (`LLM_MODE=gemini`). Claude queda disponible como alterno con el mismo contrato.
+**Por qué la capa `LLMClient` es provider-agnóstica:** permite construir y demostrar el flujo completo sin necesidad de una API key (`MODE=mock`, respuestas deterministas basadas en las mismas reglas de negocio), y activar Gemini real cambiando una sola variable de entorno (`LLM_MODE=gemini`). Claude y DeepSeek quedan disponibles como alternos con el mismo contrato — útil ante límites de cuota gratuita sin tener que tocar los nodos del grafo ni los prompts.
+
+**Por qué Postgres (Neon) y no solo SQLite:** el entorno gratuito de despliegue (Render) no ofrece disco persistente, así que sin una base externa las señales y tareas se perderían en cada redeploy o cuando el servicio gratuito se reinicia por inactividad. `backend/db.py` usa SQLAlchemy de forma genérica — SQLite sigue siendo el default para desarrollo local (cero configuración), y `DATABASE_URL` apunta a una base Postgres gestionada (Neon, capa gratuita) en producción, sin cambiar una sola línea de los modelos o servicios.
 
 ## 4. Mitigación de riesgos / antialucinación
 
@@ -91,6 +97,7 @@ flowchart TB
 - Toda señal incluye **evidencia citada**, **fuentes** y un **disclaimer** explícito de que no constituye asesoría personalizada ni garantiza resultados (criterio de aceptación de HU2).
 - El campo `suggested_action` (Analista) y `research_action` (Asesor) están restringidos por diseño y por tests (`tests/test_analyst_node.py::test_signal_never_suggests_trade_execution`, `tests/test_advisor_node.py::test_advisor_never_suggests_trade_execution`) a ser siempre una acción de **investigación o revisión humana**, nunca una orden de compra/venta.
 - Toda señal queda persistida con `review_status=pending` hasta que un humano la marque como `revisada`, `escalada` o `descartada`, guardando su justificación (HU3) — el sistema nunca actúa de forma autónoma sobre una señal.
+- El Dashboard incluye un indicador de **"track record"**: compara, sobre todas las señales generadas, si la dirección que clasificó el Analista (positivo/negativo/neutral) coincide con el movimiento de precio real que se le mostró. No es una predicción de resultados futuros — es un mecanismo de auditoría continua que expone si el agente está clasificando de forma consistente con la evidencia que tuvo, en vez de simplemente confiar en la confianza que el propio modelo reporta.
 
 ## 5. Cómo se integraría a un sistema empresarial existente
 
@@ -98,7 +105,7 @@ El sistema está diseñado con puntos de extensión explícitos para no requerir
 
 - **Datos de mercado y noticias:** `NewsProvider` y `PriceProvider` (`backend/providers/`) son interfaces (`Protocol`) con una implementación Mock hoy. Reemplazarlas por fuentes reales (Bloomberg/Refinitiv/NewsAPI para noticias; un feed de mercado con licencia, yfinance o CoinGecko para precios) es una nueva clase que implementa el mismo contrato — routers y servicios no cambian.
 - **Autenticación y control de acceso:** el backend FastAPI se integra de forma estándar detrás de un API Gateway con SSO/OAuth corporativo (Azure AD, Okta) para restringir por rol (analista junior vs. lead vs. compliance) quién puede generar señales, revisar o escalar.
-- **Trazabilidad y auditoría (compliance):** cada `Signal` y `TaskAlert` queda persistida con timestamp, fuente, evidencia y justificación humana — ese mismo modelo (`backend/models.py`) puede escribirse a un data warehouse corporativo (o exportarse vía un endpoint adicional) para cumplir requisitos regulatorios locales de trazabilidad de recomendaciones.
+- **Trazabilidad y auditoría (compliance):** cada `Signal` y `TaskAlert` queda persistida con timestamp, fuente, evidencia y justificación humana en una base Postgres gestionada (no en un archivo efímero) — ese mismo modelo (`backend/models.py`) puede escribirse a un data warehouse corporativo (o exportarse vía un endpoint adicional) para cumplir requisitos regulatorios locales de trazabilidad de recomendaciones.
 - **Notificaciones y flujo de trabajo:** los `TaskAlert` que hoy se listan en la UI pueden publicarse como eventos (webhook) hacia herramientas ya usadas por el equipo — Slack/Teams para alertas en tiempo real, Jira/ServiceNow para asignar el research como ticket formal.
 - **Despliegue:** el backend es un contenedor Docker autocontenido (`Dockerfile`) desplegable en cualquier plataforma corporativa (Kubernetes, ECS, Azure Container Apps) sin cambios; el frontend es un build estático (Vite) servible desde cualquier CDN interno.
 - **Cambio de proveedor LLM:** si la empresa ya tiene un contrato con un proveedor de LLM distinto (Azure OpenAI, Vertex AI, Claude vía Bedrock), solo se agrega un nuevo modo en `LLMClient` (`backend/agents/llm.py`) — el resto del sistema (grafo, prompts, schemas de salida) no se toca.
@@ -142,4 +149,4 @@ Siguiendo un enfoque de **Spec-Driven Development** (la especificación es la fu
 
 ## 7. Evidencia de pruebas
 
-Ver `tests/` (pytest): tests de nodos del grafo con LLM mockeado (`test_analyst_node.py`, `test_advisor_node.py`), smoke test del pipeline completo (`test_agent.py`), tests de reintentos ante fallos transitorios del LLM (`test_llm_retry.py`) y tests de los endpoints (`test_api.py`), incluyendo verificación explícita de que ninguna salida del sistema sugiere una orden de compra/venta. 25 tests en total, corridos automáticamente en cada push via GitHub Actions (`.github/workflows/ci.yml`). Correr localmente con `pytest` desde la raíz del repo.
+Ver `tests/` (pytest): tests de nodos del grafo con LLM mockeado (`test_analyst_node.py`, `test_advisor_node.py`), smoke test del pipeline completo (`test_agent.py`), tests de reintentos ante fallos transitorios del LLM (`test_llm_retry.py`) y tests de los endpoints (`test_api.py`) — incluyendo verificación explícita de que ninguna salida del sistema sugiere una orden de compra/venta, deduplicación de señales/tareas, y casos borde (recursos desconocidos, estados de revisión inválidos, filtros de tareas). **34 tests en total**, corridos automáticamente en cada push vía GitHub Actions (`.github/workflows/ci.yml`, badge visible en el `README.md`). Correr localmente con `pytest` desde la raíz del repo.
