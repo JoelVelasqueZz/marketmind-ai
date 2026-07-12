@@ -4,6 +4,7 @@ import { api } from "../api";
 import Disclaimer from "../components/Disclaimer";
 import Filters, { type FilterState } from "../components/Filters";
 import NewsCard from "../components/NewsCard";
+import Skeleton from "../components/Skeleton";
 import type { Instrument, NewsItem } from "../types";
 
 const EMPTY_FILTERS: FilterState = { type: "", asset: "", maxAgeDays: "" };
@@ -57,7 +58,11 @@ export default function Radar() {
       )}
 
       {loading ? (
-        <p className="text-body-md text-on-surface-variant">Cargando noticias…</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-stack-lg">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-56" />
+          ))}
+        </div>
       ) : news.length === 0 ? (
         <p className="text-body-md text-on-surface-variant">
           No hay noticias que coincidan con estos filtros.

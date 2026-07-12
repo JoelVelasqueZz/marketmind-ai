@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import ImpactBadge from "../components/ImpactBadge";
+import Skeleton from "../components/Skeleton";
 import Sparkline from "../components/Sparkline";
 import { formatPct, formatPrice } from "../lib/format";
 import type { AssetOverview, Watchlist as WatchlistType, WatchlistOverview } from "../types";
@@ -150,13 +151,14 @@ export default function Watchlist() {
             </tr>
           </thead>
           <tbody>
-            {loading && (
-              <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-on-surface-variant">
-                  Cargando…
-                </td>
-              </tr>
-            )}
+            {loading &&
+              Array.from({ length: 4 }).map((_, i) => (
+                <tr key={i} className="border-b border-outline-variant last:border-0">
+                  <td className="px-4 py-3" colSpan={7}>
+                    <Skeleton className="h-8" />
+                  </td>
+                </tr>
+              ))}
             {!loading &&
               assets.map((a) => (
                 <tr key={a.symbol} className="border-b border-outline-variant last:border-0 hover:bg-surface-container-high">
