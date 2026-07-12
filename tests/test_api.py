@@ -166,3 +166,21 @@ def test_watchlist_overview_includes_price_and_signal(client):
 def test_watchlist_overview_unknown_returns_404(client):
     r = client.get("/api/briefing/watchlists/does-not-exist/overview")
     assert r.status_code == 404
+
+
+def test_watchlists_include_all_option_first(client):
+    r = client.get("/api/briefing/watchlists")
+    assert r.status_code == 200
+    watchlists = r.json()
+    assert watchlists[0]["id"] == "all"
+    assert len(watchlists[0]["instruments"]) >= 9
+
+
+def test_all_watchlist_overview_covers_every_instrument_with_price(client):
+    r = client.get("/api/briefing/watchlists/all/overview")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["watchlist_id"] == "all"
+    for asset in body["assets"]:
+        assert asset["price"] is not None, f"{asset['symbol']} no tiene historico de precio"
+        assert asset["change_pct_1d"] is not None

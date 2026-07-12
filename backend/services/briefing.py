@@ -29,6 +29,13 @@ with open(DATA_DIR / "watchlists.json", encoding="utf-8") as f:
 with open(DATA_DIR / "instruments.json", encoding="utf-8") as f:
     _instruments_by_symbol = {i["symbol"]: i for i in json.load(f)}
 
+ALL_WATCHLIST_ID = "all"
+_ALL_WATCHLIST = {
+    "id": ALL_WATCHLIST_ID,
+    "name": "Todos los instrumentos",
+    "instruments": list(_instruments_by_symbol.keys()),
+}
+
 
 class WatchlistNotFound(Exception):
     pass
@@ -159,11 +166,11 @@ def generate_briefing(watchlist_id: str, session: Session, force: bool = False) 
 
 
 def list_watchlists() -> list[dict]:
-    return list(_watchlists.values())
+    return [_ALL_WATCHLIST, *_watchlists.values()]
 
 
 def get_watchlist_overview(watchlist_id: str, session: Session) -> WatchlistOverviewOut:
-    watchlist = _watchlists.get(watchlist_id)
+    watchlist = _ALL_WATCHLIST if watchlist_id == ALL_WATCHLIST_ID else _watchlists.get(watchlist_id)
     if watchlist is None:
         raise WatchlistNotFound(f"No existe la watchlist {watchlist_id}")
 
