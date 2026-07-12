@@ -44,9 +44,13 @@ npm run dev
 
 Abrir http://localhost:5173
 
-### Activar Gemini real (opcional)
+### Activar un LLM real (opcional)
 
-En `.env` del backend: `LLM_MODE=gemini`, `GOOGLE_API_KEY=<tu key>`. Las mismas rutas (`/api/signals/generate`, `/api/briefing/generate`) pasan de usar el modo mock determinista a usar Gemini de verdad, sin cambiar código.
+Cambiar de proveedor es una sola variable de entorno (`LLM_MODE`) en `.env` del backend — las mismas rutas (`/api/signals/generate`, `/api/briefing/generate`) pasan de usar el modo mock determinista a usar el proveedor real, sin tocar código:
+
+- **Gemini** (motor principal): `LLM_MODE=gemini`, `GOOGLE_API_KEY=<tu key>`.
+- **Claude** (alterno): `LLM_MODE=claude`, `ANTHROPIC_API_KEY=<tu key>`.
+- **DeepSeek** (alterno gratuito, si se agota la cuota de Gemini): `LLM_MODE=deepseek`, `DEEPSEEK_API_KEY=<tu key>`. Sirve tanto con la [API oficial de DeepSeek](https://platform.deepseek.com/sign_in) (5M tokens gratis de prueba, deja `DEEPSEEK_BASE_URL` como está) como con [OpenRouter](https://openrouter.ai/) (`DEEPSEEK_BASE_URL=https://openrouter.ai/api/v1` + tu key de OpenRouter + `LLM_MODEL=deepseek/deepseek-chat-v3.1:free` o el modelo gratis que esté disponible).
 
 ## Estructura
 
