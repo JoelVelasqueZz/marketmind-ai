@@ -38,7 +38,7 @@ Guion para 4 personas, ~3 minutos totales. Cada bloque trae el texto exacto para
 
 ## Persona 4 — Diferenciadores y cierre (2:05 – 2:45)
 
-**[PANTALLA: Dashboard con el KPI de "track record" → badge de modo LLM en la esquina]**
+**[PANTALLA: Dashboard con el KPI de "track record" → Active Watchlist (AAPL, BTC, HYG...) → badge de modo LLM en la esquina]**
 
 > "Todo esto no es solo para Ecuador: el mismo pipeline cubre acciones, cripto y crédito global. Sumamos un **track record** que audita si la clasificación del agente coincide con el movimiento real de precio, persistencia en la nube, y una capa de IA agnóstica: hoy corre con **Gemini**, cambiar a otro proveedor es una variable de entorno. Y hay más de **35 tests automatizados** — incluido el ruteo condicional del grafo — corriendo en cada cambio de código."
 
@@ -57,5 +57,5 @@ Guion para 4 personas, ~3 minutos totales. Cada bloque trae el texto exacto para
 - Cambia de pantalla **un par de segundos antes** de que la persona correspondiente empiece a hablar, para que no se vea el salto en seco.
 - **Desplegar esta rama antes de grabar** (merge + push) y confirmar en la URL de producción que Briefings abre con **Ecuador & LatAm** preseleccionada.
 - **Pre-generar antes de grabar** la señal de la noticia de la Superintendencia y el briefing de Ecuador & LatAm (se reusan al instante y no dependen de la cuota de Gemini en cámara). Calentar el backend abriendo `/api/health` ~2 min antes.
-- El orden de las pantallas sigue el recorrido real de la app: Dashboard → News Radar (ECU2035) → AI Analysis (Superintendencia) → Briefings (Ecuador & LatAm) → Dashboard. El detalle página por página está en [`RECORRIDO_APP.md`](RECORRIDO_APP.md).
+- El orden de las pantallas sigue el recorrido real de la app: Dashboard → News Radar (ECU2035) → AI Analysis (Superintendencia) → Briefings (Ecuador & LatAm) → Dashboard → Active Watchlist. El detalle página por página está en [`RECORRIDO_APP.md`](RECORRIDO_APP.md).
 - Total ~370 palabras de guion. Si al ensayar se pasa de 3 minutos, recortar primero la primera frase de la Persona 4 ("Todo esto no es solo para Ecuador...").
