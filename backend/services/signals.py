@@ -6,9 +6,11 @@ from backend.agents.analyst_node import run_analyst
 from backend.models import Signal
 from backend.providers.price_provider import MockPriceProvider
 from backend.services.radar import get_news
-from backend.schemas import PriceComparison, SignalOut
+from backend.schemas import PriceComparison, ReviewExample, SignalOut
 
 _price_provider = MockPriceProvider()
+
+MAX_REVIEW_EXAMPLES = 3
 
 
 class NewsNotFound(Exception):
@@ -27,6 +29,33 @@ def find_existing_signal(news_id: str, instrument: str, session: Session) -> Opt
         .order_by(Signal.created_at.desc())
     )
     return session.exec(query).first()
+
+
+def list_review_examples(
+    instrument: str, session: Session, limit: int = MAX_REVIEW_EXAMPLES
+) -> list[ReviewExample]:
+    """Ultimas senales revisadas por un humano para este instrumento (HU3).
+
+    Se reinyectan como ejemplos few-shot al Analista para que su criterio se
+    calibre con el juicio ya emitido por el Comite, sin reentrenar el modelo.
+    """
+    query = (
+        select(Signal)
+        .where(Signal.instrument == instrument.upper(), Signal.review_status != "pending")
+        .order_by(Signal.reviewed_at.desc())
+        .limit(limit)
+    )
+    return [
+        ReviewExample(
+            instrument=s.instrument,
+            impact=s.impact,
+            confidence=s.confidence,
+            evidence=s.evidence,
+            review_status=s.review_status,
+            review_justification=s.review_justification or "",
+        )
+        for s in session.exec(query).all()
+    ]
 
 
 def generate_signal(news_id: str, instrument: str, session: Session, force: bool = False) -> SignalOut:
@@ -48,12 +77,15 @@ def generate_signal(news_id: str, instrument: str, session: Session, force: bool
             "note": f"No hay historico de precio disponible para {instrument.upper()} en el rango mock.",
         }
 
-    signal_data = run_analyst(news, price_comparison)
+    review_examples = list_review_examples(instrument, session)
+    signal_data = run_analyst(news, price_comparison, review_examples=review_examples)
     signal = Signal(**signal_data)
     session.add(signal)
     session.commit()
     session.refresh(signal)
-    return _to_out(signal)
+    out = _to_out(signal)
+    out.review_examples_used = review_examples
+    return out
 
 
 def list_signals(instrument: Optional[str], session: Session) -> list[SignalOut]:

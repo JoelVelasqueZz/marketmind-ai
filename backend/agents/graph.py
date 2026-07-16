@@ -27,6 +27,7 @@ class AgentState(TypedDict, total=False):
     news: dict
     price_comparison: dict
     llm: Optional[LLMClient]
+    review_examples: Optional[list]
     signal: Optional[dict]
     briefing_item: Optional[dict]
 
@@ -91,11 +92,24 @@ def build_graph():
 graph = build_graph()
 
 
-def run_pipeline(news: dict, price_comparison: dict, llm: LLMClient | None = None) -> AgentState:
+def run_pipeline(
+    news: dict,
+    price_comparison: dict,
+    llm: LLMClient | None = None,
+    review_examples: list | None = None,
+) -> AgentState:
     """Ejecuta analyst_node -> (advisor|monitor) end-to-end para un item de briefing.
 
     llm permite inyectar un cliente fake en tests para controlar la senal del
     Analista y verificar el ruteo; en produccion queda None y cada nodo crea
-    su LLMClient segun LLM_MODE.
+    su LLMClient segun LLM_MODE. review_examples son revisiones humanas
+    pasadas del mismo instrumento, reinyectadas como few-shot (HU3).
     """
-    return graph.invoke({"news": news, "price_comparison": price_comparison, "llm": llm})
+    return graph.invoke(
+        {
+            "news": news,
+            "price_comparison": price_comparison,
+            "llm": llm,
+            "review_examples": review_examples,
+        }
+    )

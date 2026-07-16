@@ -125,7 +125,8 @@ def generate_briefing(watchlist_id: str, session: Session, force: bool = False) 
                 "note": f"No hay historico de precio disponible para {instrument.upper()}.",
             }
 
-            result = run_pipeline(news, price_comparison)
+            review_examples = signals_service.list_review_examples(instrument, session)
+            result = run_pipeline(news, price_comparison, review_examples=review_examples)
             signal_data = result["signal"]
             briefing_item_data = result["briefing_item"]
 

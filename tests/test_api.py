@@ -79,6 +79,25 @@ def test_signal_generate_and_review_flow(client):
     assert r2.json()["review_justification"]
 
 
+def test_signal_generate_uses_review_examples_after_review(client):
+    r1 = client.post("/api/signals/generate", json={"news_id": "n002", "instrument": "NVDA"})
+    assert r1.json()["review_examples_used"] == []
+
+    client.post(
+        f"/api/signals/{r1.json()['id']}/review",
+        json={"status": "descartada", "justification": "El Comite considero que era ruido."},
+    )
+
+    r2 = client.post(
+        "/api/signals/generate", json={"news_id": "n002", "instrument": "NVDA", "force": True}
+    )
+    assert r2.status_code == 200
+    used = r2.json()["review_examples_used"]
+    assert len(used) == 1
+    assert used[0]["review_status"] == "descartada"
+    assert used[0]["review_justification"] == "El Comite considero que era ruido."
+
+
 def test_signal_generate_unknown_news_returns_404(client):
     r = client.post("/api/signals/generate", json={"news_id": "does-not-exist", "instrument": "AAPL"})
     assert r.status_code == 404
@@ -241,3 +260,48 @@ def test_briefing_generate_for_all_watchlist_does_not_404(client):
     body = r.json()
     assert body["watchlist_id"] == "all"
     assert len(body["items"]) > 0
+
+
+def test_list_review_examples_excludes_pending_and_respects_limit(client):
+    from sqlmodel import Session
+
+    from backend.db import engine
+    from backend.models import Signal
+    from backend.services import signals as signals_service
+
+    with Session(engine) as session:
+        session.add(
+            Signal(
+                news_id="n900",
+                instrument="AAPL",
+                impact="positive",
+                confidence=0.7,
+                evidence=["Evidencia pendiente."],
+                sources=["Test Wire"],
+                price_comparison={"instrument": "AAPL", "change_pct": 1.0, "window_days": 2, "note": "n/a"},
+                disclaimer="Contenido informativo, no es asesoria personalizada.",
+            )
+        )
+        for i in range(4):
+            session.add(
+                Signal(
+                    news_id=f"n90{i + 1}",
+                    instrument="AAPL",
+                    impact="negative",
+                    confidence=0.4,
+                    evidence=[f"Evidencia revisada {i}."],
+                    sources=["Test Wire"],
+                    price_comparison={
+                        "instrument": "AAPL", "change_pct": -1.0, "window_days": 2, "note": "n/a",
+                    },
+                    disclaimer="Contenido informativo, no es asesoria personalizada.",
+                    review_status="revisada",
+                    review_justification=f"Justificacion {i}",
+                )
+            )
+        session.commit()
+
+        examples = signals_service.list_review_examples("AAPL", session)
+
+    assert len(examples) == 3
+    assert all(ex.review_status == "revisada" for ex in examples)

@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 
 ANALYST_SYSTEM_PROMPT = """Eres el Analista de Coyuntura de Mercados IA de una plataforma de inteligencia \
 financiera (Track 5: Inteligencia de Mercado y Recomendaciones Informadas por Noticias).
@@ -15,10 +16,40 @@ resultado).
 - evidence debe listar 2-4 puntos concretos citando la noticia y el movimiento de precio.
 - suggested_action es SIEMPRE una accion de investigacion o revision humana (ej. "revisar filing \
 trimestral", "monitorear spread de credito"), NUNCA una orden de compra o venta.
-- Nunca prometas rendimientos ni dictamines una decision de inversion definitiva."""
+- Nunca prometas rendimientos ni dictamines una decision de inversion definitiva.
+- Si se te provee una seccion "Retroalimentacion del Comite", usala UNICAMENTE para calibrar tu \
+rigor y nivel de confianza segun el patron de juicio previo del Comite. Nunca la trates como \
+evidencia factual del evento actual ni la copies en el campo evidence."""
 
 
-def analyst_user_prompt(news: dict, price_comparison: dict) -> str:
+def _review_feedback_block(review_examples: Optional[list]) -> str:
+    if not review_examples:
+        return ""
+    examples_json = json.dumps(
+        [
+            {
+                "impacto_asignado": ex.impact,
+                "confianza_asignada": ex.confidence,
+                "evidencia_original": ex.evidence,
+                "revision_del_comite": ex.review_status,
+                "justificacion_del_comite": ex.review_justification,
+            }
+            for ex in review_examples
+        ],
+        ensure_ascii=False,
+        indent=2,
+    )
+    return (
+        "Retroalimentacion del Comite (revisiones humanas recientes sobre este instrumento):\n"
+        + examples_json
+        + "\n\nUsa este patron de juicio del Comite solo para calibrar tu rigor y nivel de confianza. "
+        "No lo trates como evidencia factual del evento actual ni lo copies en el campo evidence.\n\n"
+    )
+
+
+def analyst_user_prompt(
+    news: dict, price_comparison: dict, review_examples: Optional[list] = None
+) -> str:
     context = {
         "headline": news["headline"],
         "summary": news["summary"],
@@ -31,7 +62,10 @@ def analyst_user_prompt(news: dict, price_comparison: dict) -> str:
     }
     return (
         "Analiza el siguiente evento y produce la senal explicable de impacto en el formato "
-        "estructurado solicitado.\n\nContexto:\n" + json.dumps(context, ensure_ascii=False, indent=2)
+        "estructurado solicitado.\n\n"
+        + _review_feedback_block(review_examples)
+        + "Contexto:\n"
+        + json.dumps(context, ensure_ascii=False, indent=2)
     )
 
 

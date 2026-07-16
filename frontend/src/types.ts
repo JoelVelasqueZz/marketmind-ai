@@ -33,6 +33,15 @@ export interface PricePoint {
   close: number;
 }
 
+export interface ReviewExample {
+  instrument: string;
+  impact: Impact;
+  confidence: number;
+  evidence: string[];
+  review_status: ReviewStatus;
+  review_justification: string;
+}
+
 export interface Signal {
   id: string;
   news_id: string;
@@ -47,6 +56,7 @@ export interface Signal {
   created_at: string;
   review_status: ReviewStatus;
   review_justification?: string | null;
+  review_examples_used: ReviewExample[];
 }
 
 export interface BriefingItem {

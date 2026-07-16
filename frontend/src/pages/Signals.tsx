@@ -218,6 +218,17 @@ export default function Signals() {
               </div>
             )}
 
+            {current.review_examples_used.length > 0 && (
+              <div className="flex items-start gap-2 bg-success/10 border border-success/30 rounded-lg p-3 mb-4">
+                <span className="material-symbols-outlined text-success">history</span>
+                <p className="text-body-md text-on-surface">
+                  Calibrado con {current.review_examples_used.length}{" "}
+                  {current.review_examples_used.length === 1 ? "revisión previa" : "revisiones previas"}{" "}
+                  del Comité: “{current.review_examples_used[0].review_justification}”
+                </p>
+              </div>
+            )}
+
             <Disclaimer text={current.disclaimer} />
           </div>
 

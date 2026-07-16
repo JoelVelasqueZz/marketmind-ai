@@ -49,6 +49,17 @@ class AnalystLLMOutput(BaseModel):
     suggested_action: str
 
 
+class ReviewExample(BaseModel):
+    """Revision humana pasada, reutilizada como ejemplo few-shot para el Analista."""
+
+    instrument: str
+    impact: Impact
+    confidence: float
+    evidence: list[str]
+    review_status: ReviewStatus
+    review_justification: str
+
+
 class SignalOut(BaseModel):
     id: str
     news_id: str
@@ -63,6 +74,7 @@ class SignalOut(BaseModel):
     created_at: datetime
     review_status: ReviewStatus
     review_justification: Optional[str] = None
+    review_examples_used: list[ReviewExample] = Field(default_factory=list)
 
 
 class SignalGenerateRequest(BaseModel):
