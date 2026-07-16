@@ -127,24 +127,24 @@ Total enfocado ~11-14h, dentro de las ~30h disponibles con buffer para imprevist
    - **Briefings:** resumen por watchlist; marcar una señal como revisada/escalada/descartada con justificación (persiste tras recargar); crear una tarea/alerta; confirmar que **no existe** ninguna acción de compra/venta (HU3 ✔).
 4. Cambiar `LLM_MODE=gemini` + `GOOGLE_API_KEY` → las mismas vistas ahora usan análisis reales de Gemini vía LangGraph.
 5. Abrir el **link de despliegue** público y repetir el recorrido — debe verse igual que en local.
+6. `pytest` corre verde; README/documento técnico completos; repo público; ZIP armado; video de 3 min listo.
 
-## En progreso: feedback humano como few-shot ("El Analista que aprende del Comité")
+## Completado: feedback humano como few-shot ("El Analista que aprende del Comité")
 
-Feature añadida **después** de clasificar a la final presencial (16-17 julio 2026), dentro de la ventana de mejoras permitida hasta el viernes 17/07 3:00 pm (se revisan commits). Si estás retomando esto — incluida cualquier sesión de Claude Code / Fable 5 de un compañero — este es el estado.
+Feature añadida **después** de clasificar a la final presencial (16-17 julio 2026), dentro de la ventana de mejoras permitida hasta el viernes 17/07 3:00 pm (se revisan commits). **Estado: lista, commiteada en `main` y verificada funcionando en el deploy de producción** (Render + Vercel + Neon). Si estás retomando el proyecto — incluida cualquier sesión de Claude Code / Fable 5 de un compañero — esto ya no requiere trabajo adicional, queda como referencia de diseño.
 
 **Qué es:** cuando un humano marca una `Signal` como `revisada`/`escalada`/`descartada` con justificación (HU3, ya existente en `review_signal` de `backend/services/signals.py`), esa justificación se reinyecta como ejemplo few-shot en el prompt del Analista la próxima vez que genera una señal nueva para el **mismo instrumento**. No es fine-tuning (no se tocan pesos del modelo) — es recuperación de contexto (hasta 3 revisiones recientes) + prompting.
 
-**Por qué:** refuerza el criterio de mitigación de riesgos/antialucinación (el Analista se calibra con juicio humano real, no improvisa) y la propuesta de valor del pitch de 5 min. Reutiliza columnas que **ya existen** en `Signal` (`review_status`, `review_justification`, `reviewed_at`) — deliberadamente no se toca `backend/models.py` porque el proyecto usa `SQLModel.metadata.create_all()` sin Alembic (`backend/db.py`), y una columna nueva no se propagaría a la tabla ya creada en Neon sin una migración manual.
+**Por qué:** refuerza el criterio de mitigación de riesgos/antialucinación (el Analista se calibra con juicio humano real, no improvisa) y la propuesta de valor del pitch de 5 min. Reutiliza columnas que **ya existían** en `Signal` (`review_status`, `review_justification`, `reviewed_at`) — deliberadamente no se tocó `backend/models.py` porque el proyecto usa `SQLModel.metadata.create_all()` sin Alembic (`backend/db.py`), y una columna nueva no se habría propagado a la tabla ya creada en Neon sin una migración manual.
 
 **Archivos que toca:**
-- `backend/schemas.py` — nuevo `ReviewExample`, campo transitorio `review_examples_used` en `SignalOut` (no persistido).
+- `backend/schemas.py` — `ReviewExample`, campo transitorio `review_examples_used` en `SignalOut` (no persistido).
 - `backend/services/signals.py` — `list_review_examples(instrument, session, limit=3)`, wiring en `generate_signal`.
-- `backend/agents/prompts.py` — bloque de feedback insertado **antes** de `"Contexto:\n"` en `analyst_user_prompt` (la regex del mock en `mock_llm.py` depende de que `"Contexto:\n{json}"` siga siendo lo último del string — no mover el bloque después).
+- `backend/agents/prompts.py` — bloque de feedback insertado **antes** de `"Contexto:\n"` en `analyst_user_prompt` (la regex del mock en `mock_llm.py` depende de que `"Contexto:\n{json}"` siga siendo lo último del string).
 - `backend/agents/analyst_node.py`, `backend/agents/graph.py` — parámetro opcional `review_examples` propagado por `run_analyst` / `analyst_node` / `AgentState` / `run_pipeline`.
 - `backend/services/briefing.py` — mismo wiring en la rama de señal nueva de `generate_briefing`, para que HU3 también se beneficie.
-- Opcional (frontend): `frontend/src/types.ts` + `frontend/src/pages/Signals.tsx` — callout "Calibrado con N revisión(es) previa(s) del Comité" cuando `review_examples_used` no esté vacío.
+- Frontend: `frontend/src/types.ts` + `frontend/src/pages/Signals.tsx` — callout "Calibrado con N revisión(es) previa(s) del Comité" cuando `review_examples_used` no está vacío. Ya implementado (no quedó como stretch).
 
-**Importante para la demo en vivo:** el efecto solo se nota si ya existen señales revisadas para el instrumento que se va a mostrar en el pitch. Antes de presentar: generar y revisar 2-3 señales del instrumento protagonista (p. ej. `ECU2035`) con justificaciones creíbles, y recién ahí generar una señal nueva para ese instrumento — ese es el momento donde se ve la calibración.
+**Tests:** 4 nuevos en `tests/test_analyst_node.py` (bloque de feedback presente/ausente en el prompt) y `tests/test_api.py` (límite/exclusión de `pending` en `list_review_examples`, flujo completo vía API). 43/43 tests en verde.
 
-**Estado:** ver plan completo con el detalle línea por línea de cada cambio y los tests planeados en `CLAUDE.md` → o pedirle a Claude Code que retome desde este párrafo.
-6. `pytest` corre verde; README/documento técnico completos; repo público; ZIP armado; video de 3 min listo.
+**Verificado en vivo:** en el deploy de producción, para `ECU2035` (instrumento protagonista de la demo), se generó y revisó señal para las noticias `n025` (escalada) y `n026` (revisada); al generar una señal nueva para `n027`/`n028` (fresca, nunca analizada) apareció correctamente "Calibrado con N revisiones previas del Comité" citando la justificación real guardada. Nota para la demo: el efecto **solo se nota generando una señal para una noticia que nunca se haya analizado antes** para ese instrumento — si repites la misma noticia, la app reusa la señal ya guardada (para no gastar cuota de LLM) y no recalcula el feedback.
