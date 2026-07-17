@@ -105,7 +105,7 @@ export default function ReviewControls({
           className="bg-surface-variant border border-outline-variant rounded-lg px-3 py-2 text-label-md text-on-surface outline-none cursor-pointer"
           value={role}
           onChange={(e) => setRole(e.target.value as ReviewerRole)}
-          title="Actúas como (Expediente 360): escalar requiere Lead o Compliance"
+          title="Actúas como (Expediente 360): identidad declarada, no autenticación. Escalar requiere Lead o Compliance."
         >
           {ROLE_OPTIONS.map(([value, label]) => (
             <option key={value} value={value}>
