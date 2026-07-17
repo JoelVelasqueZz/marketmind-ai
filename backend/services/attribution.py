@@ -18,7 +18,7 @@ from backend.agents.analyst_node import run_analyst
 from backend.config import LLM_MODE, LLM_MODEL
 from backend.models import Signal
 from backend.services.radar import get_news
-from backend.services.signals import NewsNotFound
+from backend.services.signals import NewsNotFound, list_review_examples
 
 ATTRIBUTION_VERSION = 1
 
@@ -38,16 +38,20 @@ def compute_attribution(signal: Signal, session: Session, force: bool = False) -
         raise NewsNotFound(f"No existe la noticia {signal.news_id} para sondear la senal")
 
     base_pc = signal.price_comparison
+    # Experimento controlado: TODO lo demas (incluido el few-shot del Comite
+    # que uso la senal original) se mantiene constante; solo cambia la
+    # variable sondeada.
+    review_examples = list_review_examples(signal.instrument, session)
 
     flat_pc = {
         **base_pc,
         "change_pct": 0.0,
         "note": "(sondeo contrafactual: sin variacion de precio)",
     }
-    no_price = run_analyst(news, flat_pc)
+    no_price = run_analyst(news, flat_pc, review_examples=review_examples)
 
     neutral_news = {**news, "headline": "", "summary": ""}
-    no_headline = run_analyst(neutral_news, base_pc)
+    no_headline = run_analyst(neutral_news, base_pc, review_examples=review_examples)
 
     attribution = {
         "v": ATTRIBUTION_VERSION,

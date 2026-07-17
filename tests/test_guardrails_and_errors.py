@@ -76,6 +76,34 @@ def test_guardrail_keeps_research_actions():
     assert action == text
 
 
+def test_guardrail_catches_accented_and_conjugated_orders():
+    # Un LLM real escribe espanol con tildes y ordenes conjugadas.
+    forbidden = [
+        "Abrir una posición larga en TSLA antes del cierre.",
+        "Ejecutar la operación de compra sobre ECU2035.",
+        "Compre TSLA hoy mismo.",
+        "Venda toda la exposición a NVDA.",
+        "Adquirir 100 acciones de AAPL de inmediato.",
+        "Liquidar la posición en ETH.",
+    ]
+    for text in forbidden:
+        _, replaced = ensure_research_action(text, "TST")
+        assert replaced, f"debio reemplazarse: {text}"
+
+
+def test_guardrail_keeps_market_jargon():
+    # Jerga descriptiva de mercado: no son ordenes.
+    descriptive = [
+        "Monitorear el sell-off del sector tecnológico y su contagio.",
+        "Comparar el consenso sell-side antes de escalar.",
+        "Revisar el programa de buyback anunciado por el emisor.",
+    ]
+    for text in descriptive:
+        action, replaced = ensure_research_action(text, "TST")
+        assert not replaced, f"falso positivo: {text}"
+        assert action == text
+
+
 def test_analyst_discards_trade_action_from_real_llm():
     signal = run_analyst(NEWS, PRICE_COMPARISON, llm=ForbiddenActionLLM())
     assert "comprar" not in signal["suggested_action"].lower()

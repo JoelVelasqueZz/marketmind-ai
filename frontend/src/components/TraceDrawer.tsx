@@ -15,7 +15,12 @@ const PATH_LABEL: Record<TraceRun["path"], string> = {
   "briefing-reuse": "Reuso en briefing",
 };
 
-function eventLine(e: TraceEvent): { icon: string; text: string; highlight?: boolean } {
+function providerLabel(llmMode: string, model: string): string {
+  // En mock el nombre del modelo de config no aplica: el generador es determinista.
+  return llmMode === "mock" ? "mock · determinista (sin LLM)" : `${llmMode} · ${model}`;
+}
+
+function eventLine(e: TraceEvent): { icon: string; text: string; highlight?: boolean } | null {
   switch (e.type) {
     case "node_start":
       return { icon: "play_circle", text: `Nodo ${e.node} inicia` };
@@ -27,7 +32,7 @@ function eventLine(e: TraceEvent): { icon: string; text: string; highlight?: boo
     case "llm_call":
       return {
         icon: "smart_toy",
-        text: `Llamada LLM: ${e.provider} (${e.model}) · ${e.latency_ms} ms · intento ${e.attempts}`,
+        text: `Llamada LLM: ${providerLabel(e.provider ?? "?", e.model ?? "?")} · ${e.latency_ms} ms · intento ${e.attempts}`,
       };
     case "edge_decision":
       return {
@@ -46,7 +51,8 @@ function eventLine(e: TraceEvent): { icon: string; text: string; highlight?: boo
         highlight: true,
       };
     default:
-      return { icon: "info", text: e.type };
+      // Contrato v1: tipos de evento desconocidos (aditivos) se ignoran.
+      return null;
   }
 }
 
@@ -69,13 +75,18 @@ export default function TraceDrawer({ signal, onClose }: TraceDrawerProps) {
   }, [signal.id]);
 
   useEffect(() => {
-    // Con el drawer abierto, la rueda no debe desplazar la pagina de fondo.
+    // Con el drawer abierto: sin scroll de fondo y Escape cierra.
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
     };
-  }, []);
+  }, [onClose]);
 
   async function loadAttribution() {
     setAttribLoading(true);
@@ -93,8 +104,13 @@ export default function TraceDrawer({ signal, onClose }: TraceDrawerProps) {
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
-      <aside className="fixed inset-y-0 right-0 w-full max-w-[440px] bg-surface-container border-l border-outline-variant z-50 overflow-y-auto p-5">
+      <div className="fixed inset-0 bg-black/40 z-[60]" onClick={onClose} />
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Caja de Cristal: expediente de ejecución"
+        className="fixed inset-y-0 right-0 w-full max-w-[440px] bg-surface-container border-l border-outline-variant z-[70] overflow-y-auto p-5"
+      >
         <div className="flex items-start justify-between mb-4">
           <div>
             <h3 className="font-headline-md text-headline-md text-on-surface font-bold">
@@ -144,12 +160,14 @@ export default function TraceDrawer({ signal, onClose }: TraceDrawerProps) {
                 Registrado por el orquestador
               </p>
               <p className="text-label-sm text-on-surface-variant mb-2">
-                {run.llm_mode} · {run.model} · {new Date(run.started_at).toLocaleString("es-EC")}
+                {providerLabel(run.llm_mode, run.model)} ·{" "}
+                {new Date(run.started_at).toLocaleString("es-EC")}
                 {run.truncated && " · traza recortada"}
               </p>
               <ol className="space-y-2">
                 {run.events.map((e, idx) => {
                   const line = eventLine(e);
+                  if (!line) return null;
                   return (
                     <li
                       key={idx}

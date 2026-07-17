@@ -11,9 +11,16 @@
 > negra"**, nunca "resolvimos la caja negra".
 
 Este plan fue verificado adversarialmente contra el repo (spikes ejecutados con las versiones pineadas,
-datos de demo comprobados contra `data/`). Las fases completas suman **~4–5 días** — y la final
-presencial es el **18 de julio (Biblioteca ESPOL, Edificio 7A)**, así que la sección 0 define el recorte
-real para mañana. Las fases completas quedan como plan post-final / roadmap del pitch.
+datos de demo comprobados contra `data/`). La final presencial es el **18 de julio (Biblioteca ESPOL,
+Edificio 7A)**.
+
+> **ESTADO (17-jul, rama `feat/caja-de-cristal`): CONSTRUIDO Y VERIFICADO** — Fases 0, 1, 2 (drawer con
+> grafo SVG estático y pestañas por corrida; sin replay animado) y 4 (atribución contrafactual), más los
+> bug fixes previos (guardrails runtime con normalización de tildes, modo claude, 502 ante salida
+> inválida, executive_summary persistido, mini-migración automática de columnas en `init_db`). 68 tests
+> en verde, verificado E2E con navegador real. **La Fase 3 (vivo por SSE) queda como roadmap** — el
+> replay de trazas persistidas es el plan A de la demo. La migración en Neon ya NO es manual:
+> `init_db()` agrega las columnas faltantes en el arranque.
 
 ---
 
@@ -95,9 +102,9 @@ class TraceRecorder:
   - `node_start` / `node_end` (`node`, `duration_ms`, `output_digest`)
   - `edge_decision` (`edge`, `rule` — string literal, `inputs`, `threshold`, `target`, `llm_cost`)
   - `llm_call` (`provider`, `model`, `latency_ms`, `attempts`)
-  - `reuse` (`signal_id`, `scope: "full" | "signal-only"`, `llm_calls`) — en `signal-only` se registran
-    además el `edge_decision` y el `llm_call` del Asesor si ocurre. **El badge "$0" solo aplica a
-    `scope: "full"`.**
+  - `reuse` (`signal_id`, `scope: "full" | "signal-only"`) — en `signal-only` se registran además el
+    `edge_decision` y el `llm_call` del Asesor si ocurre. El reuso total (señal + tarea existentes) no
+    escribe traza, igual que el cache-hit de HU2.
   - `gate` (reservado, shape fijado YA para no romper `v:1` después:
     `{check, claimed_value, source_value, verdict: "pass" | "fail"}`)
 - **Cache-hit de HU2** (`generate_signal` sin `force`): NO escribe traza; la UI muestra la grabación
@@ -185,13 +192,14 @@ construye Fase 3) · ensayo cronometrado · suite completa en verde.
 ### La diapositiva única
 Caja negra al centro, siete anillos — con etiqueta honesta de estado:
 
-1. **Acotar** — el LLM solo clasifica/redacta; datos, precio, ruteo y publicación son código ✅ entregado
-2. **Anclar** — contexto whitelisteado ✅ entregado
-3. **Tipar** — 4 clases, confianza acotada, Pydantic ✅ entregado
-4. **Verificar** — cada cifra contra el dataset (Compliance Gate) 🗺 roadmap
-5. **Medir** — track record/calibración ✅ embrión entregado · Centinela 🗺 roadmap
-6. **Sondear** — contrafactuales 🗺 roadmap (Fase 4)
-7. **Registrar** — el expediente de ejecución 🗺 este plan (Fases 0–3)
+1. **Acotar** — el LLM solo clasifica/redacta; datos, precio, ruteo y publicación son código ✅
+2. **Anclar** — contexto whitelisteado ✅
+3. **Tipar** — 4 clases, confianza acotada, Pydantic (+ evidencia mínima de 2) ✅
+4. **Verificar** — guardrail anti-órdenes en runtime + salida inválida descartada con 502 ✅ ·
+   verificación numérica de cifras (Compliance Gate completo) 🗺 roadmap
+5. **Medir** — track record/calibración ✅ embrión · Centinela con backtest 🗺 roadmap
+6. **Sondear** — contrafactuales "¿Qué pesó más?" ✅ (botón Sondear en el drawer)
+7. **Registrar** — expediente de ejecución persistido + visor con grafo ✅ · vivo por SSE 🗺 roadmap
 
 ### Guion de demo (beats corregidos y verificados contra los datos)
 1. **"Un clic, dos rutas"** — briefing Tech Megacaps con DB fresca: AAPL→Monitor, MSFT/NVDA→Advisor.
