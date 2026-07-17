@@ -70,8 +70,18 @@ class LLMClient:
     def __init__(self, mode: str | None = None, model: str | None = None) -> None:
         self.mode = mode or LLM_MODE
         self.model = model or LLM_MODEL
+        # Intentos de la ultima llamada (telemetria para la traza de ejecucion).
+        self._last_attempts = 0
+
+    def _counted(self, call: Callable[[], T]) -> Callable[[], T]:
+        def wrapped() -> T:
+            self._last_attempts += 1
+            return call()
+
+        return wrapped
 
     def generate_structured(self, system_prompt: str, user_prompt: str, schema: Type[T]) -> T:
+        self._last_attempts = 0
         try:
             if self.mode == "gemini":
                 return self._generate_gemini(system_prompt, user_prompt, schema)
@@ -79,6 +89,7 @@ class LLMClient:
                 return self._generate_claude(system_prompt, user_prompt, schema)
             if self.mode == "deepseek":
                 return self._generate_deepseek(system_prompt, user_prompt, schema)
+            self._last_attempts = 1
             return self._generate_mock(system_prompt, user_prompt, schema)
         except (ValidationError, json.JSONDecodeError) as exc:
             raise LLMOutputInvalid(
@@ -115,7 +126,7 @@ class LLMClient:
             code = getattr(exc, "code", None) or getattr(exc, "status_code", None)
             return isinstance(exc, genai_errors.ClientError) and code == 429
 
-        return _with_retry(call, is_transient)
+        return _with_retry(self._counted(call), is_transient)
 
     # --- Claude (alterno) ---
     def _generate_claude(self, system_prompt: str, user_prompt: str, schema: Type[T]) -> T:
@@ -142,7 +153,7 @@ class LLMClient:
         def is_transient(exc: Exception) -> bool:
             return isinstance(exc, (anthropic.InternalServerError, anthropic.RateLimitError, anthropic.APIConnectionError))
 
-        return _with_retry(call, is_transient)
+        return _with_retry(self._counted(call), is_transient)
 
     # --- DeepSeek (alterno gratuito, via API oficial u OpenRouter) ---
     def _generate_deepseek(self, system_prompt: str, user_prompt: str, schema: Type[T]) -> T:
@@ -170,7 +181,7 @@ class LLMClient:
         def is_transient(exc: Exception) -> bool:
             return isinstance(exc, (openai.RateLimitError, openai.APIConnectionError, openai.InternalServerError))
 
-        return _with_retry(call, is_transient)
+        return _with_retry(self._counted(call), is_transient)
 
     # --- Mock (determinista, sin red) ---
     def _generate_mock(self, system_prompt: str, user_prompt: str, schema: Type[T]) -> T:

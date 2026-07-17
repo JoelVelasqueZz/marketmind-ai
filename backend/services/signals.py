@@ -3,6 +3,8 @@ from typing import Optional
 from sqlmodel import Session, select
 
 from backend.agents.analyst_node import run_analyst
+from backend.agents.trace import TraceRecorder
+from backend.config import LLM_MODE, LLM_MODEL
 from backend.models import Signal
 from backend.providers.price_provider import MockPriceProvider
 from backend.services.radar import get_news
@@ -78,8 +80,12 @@ def generate_signal(news_id: str, instrument: str, session: Session, force: bool
         }
 
     review_examples = list_review_examples(instrument, session)
-    signal_data = run_analyst(news, price_comparison, review_examples=review_examples)
+    recorder = TraceRecorder(llm_mode=LLM_MODE, model=LLM_MODEL, path="analysis")
+    signal_data = run_analyst(
+        news, price_comparison, review_examples=review_examples, trace=recorder
+    )
     signal = Signal(**signal_data)
+    signal.execution_trace = recorder.to_json()
     session.add(signal)
     session.commit()
     session.refresh(signal)
@@ -130,4 +136,6 @@ def _to_out(signal: Signal) -> SignalOut:
         created_at=signal.created_at,
         review_status=signal.review_status,
         review_justification=signal.review_justification,
+        has_trace=bool(signal.execution_trace),
+        has_attribution=bool(signal.attribution),
     )

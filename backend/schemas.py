@@ -75,6 +75,9 @@ class SignalOut(BaseModel):
     review_status: ReviewStatus
     review_justification: Optional[str] = None
     review_examples_used: list[ReviewExample] = Field(default_factory=list)
+    # Caja de Cristal: la UI decide mostrar "Ver ejecucion" sin llamada extra.
+    has_trace: bool = False
+    has_attribution: bool = False
 
 
 class SignalGenerateRequest(BaseModel):

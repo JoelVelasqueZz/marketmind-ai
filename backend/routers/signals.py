@@ -31,3 +31,17 @@ def review_signal(signal_id: str, payload: ReviewRequest, session: Session = Dep
     if result is None:
         raise HTTPException(status_code=404, detail="Senal no encontrada")
     return result
+
+
+@router.get("/{signal_id}/trace")
+def get_signal_trace(signal_id: str, session: Session = Depends(get_session)):
+    """Caja de Cristal: la traza de ejecucion escrita por el orquestador."""
+    signal = signals_service.get_signal(signal_id, session)
+    if signal is None:
+        raise HTTPException(status_code=404, detail="Senal no encontrada")
+    if not signal.execution_trace:
+        raise HTTPException(
+            status_code=404,
+            detail="Senal anterior a la trazabilidad: no tiene traza de ejecucion registrada.",
+        )
+    return signal.execution_trace
