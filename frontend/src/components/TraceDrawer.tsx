@@ -20,6 +20,21 @@ function providerLabel(llmMode: string, model: string): string {
   return llmMode === "mock" ? "mock · determinista (sin LLM)" : `${llmMode} · ${model}`;
 }
 
+function fmtUsd(value: number): string {
+  if (value === 0) return "$0";
+  return `$${value.toFixed(6).replace(/0+$/, "").replace(/\.$/, "")}`;
+}
+
+function runCostSummary(run: TraceRun): { cost: number; saved: number } {
+  let cost = 0;
+  let saved = 0;
+  for (const e of run.events) {
+    if (e.type === "llm_call" && typeof e.cost_usd === "number") cost += e.cost_usd;
+    if (e.type === "edge_decision" && typeof e.saved_usd_est === "number") saved += e.saved_usd_est;
+  }
+  return { cost, saved };
+}
+
 function eventLine(e: TraceEvent): { icon: string; text: string; highlight?: boolean } | null {
   switch (e.type) {
     case "node_start":
@@ -29,17 +44,24 @@ function eventLine(e: TraceEvent): { icon: string; text: string; highlight?: boo
         icon: "check_circle",
         text: `Nodo ${e.node} termina${e.duration_ms != null ? ` · ${e.duration_ms} ms` : ""}`,
       };
-    case "llm_call":
+    case "llm_call": {
+      const taximetro =
+        typeof e.cost_usd === "number" && e.tokens_in != null
+          ? ` · ${e.tokens_in}→${e.tokens_out} tok · ${fmtUsd(e.cost_usd)} (${e.measured ? "medido" : "estimado"})`
+          : "";
       return {
         icon: "smart_toy",
-        text: `Llamada LLM: ${providerLabel(e.provider ?? "?", e.model ?? "?")} · ${e.latency_ms} ms · intento ${e.attempts}`,
+        text: `Llamada LLM: ${providerLabel(e.provider ?? "?", e.model ?? "?")} · ${e.latency_ms} ms · intento ${e.attempts}${taximetro}`,
       };
+    }
     case "edge_decision":
       return {
         icon: "alt_route",
         text: `Arista ${e.edge}: ${e.rule} → con ${e.inputs?.impact} · ${
           e.inputs ? Math.round(e.inputs.confidence * 100) : "?"
-        }% va a ${e.target === "monitor" ? "Monitoreo" : "Asesor"} (${e.llm_cost})`,
+        }% va a ${e.target === "monitor" ? "Monitoreo" : "Asesor"} (${e.llm_cost})${
+          typeof e.saved_usd_est === "number" ? ` · ahorro ≈ ${fmtUsd(e.saved_usd_est)}` : ""
+        }`,
         highlight: true,
       };
     case "reuse":
@@ -162,6 +184,16 @@ export default function TraceDrawer({ signal, onClose }: TraceDrawerProps) {
               <p className="text-label-sm text-on-surface-variant mb-2">
                 {providerLabel(run.llm_mode, run.model)} ·{" "}
                 {new Date(run.started_at).toLocaleString("es-EC")}
+                {(() => {
+                  const { cost, saved } = runCostSummary(run);
+                  return (
+                    <>
+                      {" · costo "}
+                      {fmtUsd(cost)}
+                      {saved > 0 && ` · ahorró ≈ ${fmtUsd(saved)} (ruteo)`}
+                    </>
+                  );
+                })()}
                 {run.truncated && " · traza recortada"}
               </p>
               <ol className="space-y-2">

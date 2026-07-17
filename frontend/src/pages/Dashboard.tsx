@@ -5,7 +5,17 @@ import ImpactBadge from "../components/ImpactBadge";
 import { STATUS_LABEL } from "../components/ReviewControls";
 import SentimentDonut from "../components/SentimentDonut";
 import Skeleton from "../components/Skeleton";
-import type { Impact, Instrument, Signal } from "../types";
+import { CAUSE_LABELS } from "../lib/causes";
+import type { Impact, Instrument, ReviewCause, Signal, TriageLevel } from "../types";
+
+const TRIAGE_ORDER: TriageLevel[] = ["rojo", "naranja", "amarillo", "verde", "azul"];
+const TRIAGE_DOT: Record<TriageLevel, string> = {
+  rojo: "bg-error",
+  naranja: "bg-warning",
+  amarillo: "bg-yellow-400",
+  verde: "bg-success",
+  azul: "bg-primary",
+};
 
 const NAV_CARDS = [
   { to: "/radar", title: "News Radar", desc: "HU1 · Noticias por activo, sector o tema", icon: "analytics" },
@@ -18,16 +28,18 @@ const EMPTY_COUNTS: Record<Impact, number> = { positive: 0, negative: 0, neutral
 export default function Dashboard() {
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [signals, setSignals] = useState<Signal[]>([]);
+  const [reviewCauses, setReviewCauses] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   function load() {
     setLoading(true);
     setError(null);
-    Promise.all([api.getInstruments(), api.getSignals()])
-      .then(([instrumentsList, signalsList]) => {
+    Promise.all([api.getInstruments(), api.getSignals(), api.getReviewCauses()])
+      .then(([instrumentsList, signalsList, causes]) => {
         setInstruments(instrumentsList);
         setSignals(signalsList);
+        setReviewCauses(causes);
       })
       .catch((err) => setError(err instanceof Error ? err.message : String(err)))
       .finally(() => setLoading(false));
@@ -187,6 +199,74 @@ export default function Dashboard() {
             <Skeleton className="w-[140px] h-[140px] rounded-full" />
           ) : (
             <SentimentDonut counts={sentimentCounts} />
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-stack-lg">
+        <div
+          className="bg-surface-container border border-outline-variant rounded-xl p-5"
+          title="Triaje estilo Manchester: cada señal recibe nivel y SLA por una regla literal reproducible. El azul es la arista de monitoreo ($0 LLM)."
+        >
+          <h3 className="font-headline-md text-headline-md text-on-surface mb-1">Triaje de la cola</h3>
+          <p className="text-label-sm text-on-surface-variant mb-4">
+            A qué debe mirar primero el humano — niveles con SLA, calculados por reglas literales.
+          </p>
+          {loading ? (
+            <Skeleton className="h-10" />
+          ) : (
+            <div className="flex flex-wrap gap-4">
+              {TRIAGE_ORDER.map((level) => {
+                const count = signals.filter((s) => s.triage?.level === level).length;
+                return (
+                  <div key={level} className="flex items-center gap-2">
+                    <span className={`w-2.5 h-2.5 rounded-full ${TRIAGE_DOT[level]}`} />
+                    <span className="text-body-md text-on-surface capitalize">{level}</span>
+                    <span className="font-mono-data text-mono-data text-on-surface-variant">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div
+          className="bg-surface-container border border-outline-variant rounded-xl p-5"
+          title="Taxonomía NTSB: causa raíz elegida por el Comité al descartar o escalar. Alimenta el few-shot del Analista."
+        >
+          <h3 className="font-headline-md text-headline-md text-on-surface mb-1">
+            ¿De qué se equivoca el Analista?
+          </h3>
+          <p className="text-label-sm text-on-surface-variant mb-4">
+            Causas raíz según el Comité — el sistema publica sus propios modos de fallo.
+          </p>
+          {loading ? (
+            <Skeleton className="h-10" />
+          ) : Object.keys(reviewCauses).length === 0 ? (
+            <p className="text-body-md text-on-surface-variant">
+              Aún sin causas registradas: al descartar o escalar una señal, elige la causa raíz.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {Object.entries(reviewCauses)
+                .sort((a, b) => b[1] - a[1])
+                .map(([cause, count]) => (
+                  <div key={cause} className="flex items-center gap-3">
+                    <span className="text-body-md text-on-surface flex-1">
+                      {CAUSE_LABELS[cause as ReviewCause] ?? cause}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="h-2 bg-primary rounded-full"
+                        style={{
+                          width: `${Math.max(12, (count / Math.max(...Object.values(reviewCauses))) * 120)}px`,
+                        }}
+                      />
+                      <span className="font-mono-data text-mono-data text-on-surface-variant">{count}</span>
+                    </div>
+                  </div>
+                ))}
+            </div>
           )}
         </div>
       </div>

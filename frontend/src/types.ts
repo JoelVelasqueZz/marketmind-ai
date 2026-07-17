@@ -2,6 +2,30 @@ export type InstrumentType = "equity" | "credit" | "crypto" | "other";
 export type Impact = "positive" | "negative" | "neutral" | "uncertain";
 export type ReviewStatus = "pending" | "revisada" | "escalada" | "descartada";
 
+export type ReviewCause =
+  | "evidencia_insuficiente"
+  | "sobre_reaccion_al_precio"
+  | "dato_no_soportado_por_fuente"
+  | "contexto_faltante"
+  | "criterio_del_comite";
+
+export type TriageLevel = "rojo" | "naranja" | "amarillo" | "verde" | "azul";
+
+export interface Triage {
+  level: TriageLevel;
+  priority: number;
+  sla: string;
+  rule: string;
+}
+
+export interface Freshness {
+  pct: number;
+  age_days: number;
+  half_life_days: number;
+  stale: boolean;
+  rule: string;
+}
+
 export interface Instrument {
   symbol: string;
   name: string;
@@ -56,9 +80,12 @@ export interface Signal {
   created_at: string;
   review_status: ReviewStatus;
   review_justification?: string | null;
+  review_cause?: ReviewCause | null;
   review_examples_used: ReviewExample[];
   has_trace: boolean;
   has_attribution: boolean;
+  triage?: Triage | null;
+  freshness?: Freshness | null;
 }
 
 // --- Caja de Cristal: traza de ejecucion escrita por el orquestador ---
@@ -77,6 +104,11 @@ export interface TraceEvent {
   model?: string;
   latency_ms?: number;
   attempts?: number;
+  tokens_in?: number;
+  tokens_out?: number;
+  cost_usd?: number;
+  measured?: boolean;
+  saved_usd_est?: number;
   duration_ms?: number;
   output_digest?: Record<string, unknown>;
   signal_id?: string;

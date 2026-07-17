@@ -3,10 +3,19 @@ import { Link } from "react-router-dom";
 import { api } from "../api";
 import Disclaimer from "../components/Disclaimer";
 import ImpactBadge from "../components/ImpactBadge";
+import FreshnessChip from "../components/FreshnessChip";
 import ReviewControls, { STATUS_LABEL } from "../components/ReviewControls";
 import TraceDrawer from "../components/TraceDrawer";
+import TriageBadge from "../components/TriageBadge";
 import { formatPct } from "../lib/format";
-import type { Briefing as BriefingType, ReviewStatus, Signal, TaskAlert, Watchlist } from "../types";
+import type {
+  Briefing as BriefingType,
+  ReviewCause,
+  ReviewStatus,
+  Signal,
+  TaskAlert,
+  Watchlist,
+} from "../types";
 
 export default function Briefing() {
   const [watchlists, setWatchlists] = useState<Watchlist[]>([]);
@@ -88,16 +97,29 @@ export default function Briefing() {
     URL.revokeObjectURL(url);
   }
 
-  async function handleReview(signalId: string, status: ReviewStatus, justification: string) {
+  async function handleReview(
+    signalId: string,
+    status: ReviewStatus,
+    justification: string,
+    cause: ReviewCause | null,
+  ) {
     if (status === "pending") return;
-    await api.reviewSignal(signalId, status, justification);
+    await api.reviewSignal(signalId, status, justification, cause);
     setBriefing((prev) =>
       prev
         ? {
             ...prev,
             items: prev.items.map((item) =>
               item.signal.id === signalId
-                ? { ...item, signal: { ...item.signal, review_status: status, review_justification: justification } }
+                ? {
+                    ...item,
+                    signal: {
+                      ...item.signal,
+                      review_status: status,
+                      review_justification: justification,
+                      review_cause: cause,
+                    },
+                  }
                 : item,
             ),
           }
@@ -176,6 +198,8 @@ export default function Briefing() {
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <ImpactBadge impact={item.signal.impact} />
+                  {item.signal.triage && <TriageBadge triage={item.signal.triage} />}
+                  {item.signal.freshness?.stale && <FreshnessChip freshness={item.signal.freshness} />}
                   <span className="font-mono-data text-mono-data text-on-surface-variant">
                     {formatPct(item.price_change_pct)}
                   </span>
@@ -214,7 +238,10 @@ export default function Briefing() {
               <ReviewControls
                 currentStatus={item.signal.review_status}
                 currentJustification={item.signal.review_justification}
-                onSave={(status, justification) => handleReview(item.signal.id, status, justification)}
+                currentCause={item.signal.review_cause}
+                onSave={(status, justification, cause) =>
+                  handleReview(item.signal.id, status, justification, cause)
+                }
               />
             </div>
           ))}

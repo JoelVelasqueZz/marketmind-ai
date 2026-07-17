@@ -1,10 +1,12 @@
 import { useState } from "react";
-import type { ReviewStatus } from "../types";
+import { CAUSE_OPTIONS } from "../lib/causes";
+import type { ReviewCause, ReviewStatus } from "../types";
 
 interface ReviewControlsProps {
   currentStatus: ReviewStatus;
   currentJustification?: string | null;
-  onSave: (status: ReviewStatus, justification: string) => Promise<void>;
+  currentCause?: ReviewCause | null;
+  onSave: (status: ReviewStatus, justification: string, cause: ReviewCause | null) => Promise<void>;
 }
 
 const STATUS_OPTIONS: ReviewStatus[] = ["pending", "revisada", "escalada", "descartada"];
@@ -16,9 +18,15 @@ export const STATUS_LABEL: Record<ReviewStatus, string> = {
   descartada: "Descartada",
 };
 
-export default function ReviewControls({ currentStatus, currentJustification, onSave }: ReviewControlsProps) {
+export default function ReviewControls({
+  currentStatus,
+  currentJustification,
+  currentCause,
+  onSave,
+}: ReviewControlsProps) {
   const [status, setStatus] = useState<ReviewStatus>(currentStatus);
   const [justification, setJustification] = useState(currentJustification ?? "");
+  const [cause, setCause] = useState<ReviewCause | "">(currentCause ?? "");
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(currentStatus === "pending");
   const [justSaved, setJustSaved] = useState(false);
@@ -28,7 +36,7 @@ export default function ReviewControls({ currentStatus, currentJustification, on
     setSaving(true);
     setError(null);
     try {
-      await onSave(status, justification);
+      await onSave(status, justification, cause || null);
       setEditing(false);
       setJustSaved(true);
       setTimeout(() => setJustSaved(false), 2500);
@@ -75,7 +83,7 @@ export default function ReviewControls({ currentStatus, currentJustification, on
         value={justification}
         onChange={(e) => setJustification(e.target.value)}
       />
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <select
           className="bg-surface-variant border border-outline-variant rounded-lg px-3 py-2 text-label-md font-bold text-on-surface outline-none cursor-pointer"
           value={status}
@@ -87,6 +95,21 @@ export default function ReviewControls({ currentStatus, currentJustification, on
             </option>
           ))}
         </select>
+        {(status === "escalada" || status === "descartada") && (
+          <select
+            className="bg-surface-variant border border-outline-variant rounded-lg px-3 py-2 text-label-md text-on-surface outline-none cursor-pointer"
+            value={cause}
+            onChange={(e) => setCause(e.target.value as ReviewCause | "")}
+            title="Causa raíz (taxonomía NTSB): hace tu juicio legible por el agente"
+          >
+            <option value="">Causa raíz (opcional)</option>
+            {CAUSE_OPTIONS.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        )}
         <button
           className="px-4 py-2 bg-primary-container text-on-primary-container text-label-md font-bold rounded-lg disabled:opacity-40"
           disabled={saving || status === "pending" || justification.trim().length < 3}

@@ -63,17 +63,19 @@ export const api = {
   getSignals: (asset?: string) =>
     request<Signal[]>(`/api/signals${toQuery({ asset })}`),
 
-  generateSignal: (news_id: string, instrument: string) =>
+  generateSignal: (news_id: string, instrument: string, force = false) =>
     request<Signal>("/api/signals/generate", {
       method: "POST",
-      body: JSON.stringify({ news_id, instrument }),
+      body: JSON.stringify({ news_id, instrument, force }),
     }),
 
-  reviewSignal: (signalId: string, status: string, justification: string) =>
+  reviewSignal: (signalId: string, status: string, justification: string, cause?: string | null) =>
     request<Signal>(`/api/signals/${signalId}/review`, {
       method: "POST",
-      body: JSON.stringify({ status, justification }),
+      body: JSON.stringify({ status, justification, cause: cause || null }),
     }),
+
+  getReviewCauses: () => request<Record<string, number>>("/api/signals/review-causes"),
 
   getSignalTrace: (signalId: string) => request<TraceDoc>(`/api/signals/${signalId}/trace`),
 
