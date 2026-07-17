@@ -20,10 +20,15 @@ from backend.schemas import (
     AssetSignalSummary,
     BriefingItemOut,
     BriefingOut,
+    ComplianceOut,
+    FreshnessOut,
     PriceComparison,
     SignalOut,
+    TriageOut,
     WatchlistOverviewOut,
 )
+from backend.services.freshness import compute_freshness
+from backend.services.triage import compute_triage
 from backend.services import signals as signals_service
 from backend.services.radar import _news_provider
 
@@ -72,8 +77,15 @@ def _signal_out(signal: Signal) -> SignalOut:
         created_at=signal.created_at,
         review_status=signal.review_status,
         review_justification=signal.review_justification,
+        review_cause=signal.review_cause,
+        reviewed_by=signal.reviewed_by,
         has_trace=bool(signal.execution_trace),
         has_attribution=bool(signal.attribution),
+        compliance=ComplianceOut(**signal.compliance) if signal.compliance else None,
+        triage=TriageOut(
+            **compute_triage(signal.impact, signal.confidence, signal.price_comparison["change_pct"])
+        ),
+        freshness=FreshnessOut(**compute_freshness(signal.created_at, signal.instrument)),
     )
 
 

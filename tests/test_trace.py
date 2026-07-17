@@ -58,6 +58,7 @@ def test_trace_sequence_monitor_path():
     assert _sequence(rec) == [
         ("node_start", "analyst"),
         ("llm_call", None),
+        ("gate", None),
         ("node_end", "analyst"),
         ("edge_decision", "monitor"),
         ("node_start", "monitor"),
@@ -76,6 +77,7 @@ def test_trace_sequence_advisor_path():
     assert _sequence(rec) == [
         ("node_start", "analyst"),
         ("llm_call", None),
+        ("gate", None),
         ("node_end", "analyst"),
         ("edge_decision", "advisor"),
         ("node_start", "advisor"),

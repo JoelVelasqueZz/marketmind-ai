@@ -4,14 +4,16 @@ import { api } from "../api";
 import ConfidenceRing from "../components/ConfidenceRing";
 import Disclaimer from "../components/Disclaimer";
 import ImpactBadge from "../components/ImpactBadge";
+import FreshnessChip from "../components/FreshnessChip";
 import ReviewControls, { STATUS_LABEL } from "../components/ReviewControls";
 import Sparkline from "../components/Sparkline";
 import TraceDrawer from "../components/TraceDrawer";
+import TriageBadge from "../components/TriageBadge";
 import { formatPct } from "../lib/format";
-import type { Instrument, NewsItem, ReviewStatus, Signal } from "../types";
+import type { Instrument, NewsItem, ReviewCause, ReviewerRole, ReviewStatus, Signal } from "../types";
 
 export default function Signals() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [newsByInstrument, setNewsByInstrument] = useState<NewsItem[]>([]);
   const [selectedInstrument, setSelectedInstrument] = useState("");
@@ -41,24 +43,48 @@ export default function Signals() {
     });
   }, [selectedInstrument]);
 
-  async function handleReview(signalId: string, status: ReviewStatus, justification: string) {
+  const ROLE_NAME: Record<ReviewerRole, string> = {
+    analista: "Analista",
+    lead: "Lead",
+    compliance: "Compliance",
+  };
+
+  async function handleReview(
+    signalId: string,
+    status: ReviewStatus,
+    justification: string,
+    cause: ReviewCause | null,
+    role: ReviewerRole,
+  ) {
     if (status === "pending") return;
-    const updated = await api.reviewSignal(signalId, status, justification);
+    const updated = await api.reviewSignal(
+      signalId,
+      status,
+      justification,
+      cause,
+      ROLE_NAME[role],
+      role,
+    );
     setCurrent((prev) => (prev && prev.id === signalId ? updated : prev));
     setHistory((prev) => prev.map((s) => (s.id === signalId ? updated : s)));
   }
 
-  async function generate(newsId: string, instrument: string) {
+  async function generate(
+    newsId: string,
+    instrument: string,
+    force = false,
+    demoContaminate = false,
+  ) {
     setLoading(true);
     setError(null);
     try {
       const news = await api.getNews({ asset: instrument }).then((items) =>
         items.find((n) => n.id === newsId) ?? items[0] ?? null,
       );
-      const signal = await api.generateSignal(newsId, instrument);
+      const signal = await api.generateSignal(newsId, instrument, force, demoContaminate);
       setCurrent(signal);
       setCurrentNews(news);
-      setHistory((prev) => [signal, ...prev]);
+      setHistory((prev) => [signal, ...prev.filter((s) => s.id !== signal.id)]);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -159,6 +185,14 @@ export default function Signals() {
         >
           {loading ? "Analizando…" : "Generar análisis"}
         </button>
+        <button
+          className="px-4 py-2 bg-surface-container border border-error/40 text-error text-label-md font-bold rounded-lg disabled:opacity-40"
+          disabled={!selectedInstrument || !selectedNewsId || loading}
+          onClick={() => generate(selectedNewsId, selectedInstrument, true, true)}
+          title="Modo demo (mock): fuerza una señal alucinada para mostrar al Compliance Gate rechazándola y corrigiéndola"
+        >
+          Inyectar señal alucinada
+        </button>
       </div>
 
       {error && <div className="mb-stack-md text-body-md text-error">Error: {error}</div>}
@@ -175,8 +209,36 @@ export default function Signals() {
                 <p className="text-body-md text-on-surface-variant mb-4">{currentNews.summary}</p>
               </>
             )}
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
               <ImpactBadge impact={current.impact} />
+              {current.triage && <TriageBadge triage={current.triage} />}
+              {current.compliance && (
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[11px] font-bold flex items-center gap-1 whitespace-nowrap ${
+                    current.compliance.verdict === "marcada"
+                      ? "bg-error-container/20 text-error"
+                      : current.compliance.verdict === "corregida"
+                        ? "bg-warning/20 text-warning"
+                        : "bg-success/15 text-success"
+                  }`}
+                  title="Compliance Gate 360: checks deterministas de despacho (ver ejecución)"
+                >
+                  <span className="material-symbols-outlined text-[13px]">verified</span>
+                  Despacho {current.compliance.passed}/{current.compliance.total}
+                </span>
+              )}
+              {current.freshness && (
+                <FreshnessChip
+                  freshness={current.freshness}
+                  onReevaluate={() => {
+                    // Limpiar ?signal= del deep-link: la regeneración crea un id
+                    // nuevo y el efecto del param restauraría la señal vieja.
+                    setSearchParams({}, { replace: true });
+                    generate(current.news_id, current.instrument, true);
+                  }}
+                  reevaluating={loading}
+                />
+              )}
               <span className="text-label-sm text-on-surface-variant">
                 Fuentes: {current.sources.join(", ")}
               </span>
@@ -257,7 +319,10 @@ export default function Signals() {
                 key={current.id}
                 currentStatus={current.review_status}
                 currentJustification={current.review_justification}
-                onSave={(status, justification) => handleReview(current.id, status, justification)}
+                currentCause={current.review_cause}
+                onSave={(status, justification, cause, role) =>
+                  handleReview(current.id, status, justification, cause, role)
+                }
               />
             </div>
           </div>
@@ -268,27 +333,50 @@ export default function Signals() {
         <TraceDrawer signal={current} onClose={() => setTraceOpen(false)} />
       )}
 
-      <h3 className="font-headline-md text-headline-md text-on-surface mb-3">Señales generadas</h3>
+      <h3 className="font-headline-md text-headline-md text-on-surface mb-1">Señales generadas</h3>
+      <p className="text-label-sm text-on-surface-variant mb-3">
+        Cola ordenada por triaje (rojo primero) — como una sala de urgencias: la IA decide a qué debe
+        mirar primero el humano.
+      </p>
       <div className="space-y-2">
         {history.length === 0 && (
           <p className="text-body-md text-on-surface-variant">Aún no se ha generado ninguna señal.</p>
         )}
-        {history.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => {
-              setCurrent(s);
-              setCurrentNews(null);
-            }}
-            className="w-full flex items-center justify-between bg-surface-container-low hover:bg-surface-container-high border border-outline-variant rounded-lg px-4 py-3 text-left transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <span className="font-mono-data text-mono-data text-primary">{s.instrument}</span>
-              <ImpactBadge impact={s.impact} />
-            </div>
-            <span className="text-label-sm text-on-surface-variant">{STATUS_LABEL[s.review_status]}</span>
-          </button>
-        ))}
+        {[...history]
+          .sort(
+            (a, b) =>
+              (a.triage?.priority ?? 9) - (b.triage?.priority ?? 9) ||
+              +new Date(b.created_at) - +new Date(a.created_at),
+          )
+          .map((s) => (
+            <button
+              key={s.id}
+              onClick={() => {
+                setCurrent(s);
+                setCurrentNews(null);
+              }}
+              className="w-full flex items-center justify-between gap-3 bg-surface-container-low hover:bg-surface-container-high border border-outline-variant rounded-lg px-4 py-3 text-left transition-colors"
+            >
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="font-mono-data text-mono-data text-primary">{s.instrument}</span>
+                {s.triage && <TriageBadge triage={s.triage} />}
+                <ImpactBadge impact={s.impact} />
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                {s.freshness && (
+                  <span
+                    className={`text-label-sm ${s.freshness.stale ? "text-warning font-bold" : "text-on-surface-variant"}`}
+                    title={s.freshness.rule}
+                  >
+                    {Math.round(s.freshness.pct * 100)}%
+                  </span>
+                )}
+                <span className="text-label-sm text-on-surface-variant">
+                  {STATUS_LABEL[s.review_status]}
+                </span>
+              </div>
+            </button>
+          ))}
       </div>
     </div>
   );

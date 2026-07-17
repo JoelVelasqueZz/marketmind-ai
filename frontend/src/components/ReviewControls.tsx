@@ -1,10 +1,17 @@
 import { useState } from "react";
-import type { ReviewStatus } from "../types";
+import { CAUSE_OPTIONS } from "../lib/causes";
+import type { ReviewCause, ReviewerRole, ReviewStatus } from "../types";
 
 interface ReviewControlsProps {
   currentStatus: ReviewStatus;
   currentJustification?: string | null;
-  onSave: (status: ReviewStatus, justification: string) => Promise<void>;
+  currentCause?: ReviewCause | null;
+  onSave: (
+    status: ReviewStatus,
+    justification: string,
+    cause: ReviewCause | null,
+    role: ReviewerRole,
+  ) => Promise<void>;
 }
 
 const STATUS_OPTIONS: ReviewStatus[] = ["pending", "revisada", "escalada", "descartada"];
@@ -16,9 +23,23 @@ export const STATUS_LABEL: Record<ReviewStatus, string> = {
   descartada: "Descartada",
 };
 
-export default function ReviewControls({ currentStatus, currentJustification, onSave }: ReviewControlsProps) {
+// Expediente 360: rol declarado del revisor. Escalar requiere lead/compliance.
+const ROLE_OPTIONS: [ReviewerRole, string][] = [
+  ["analista", "Analista"],
+  ["lead", "Lead"],
+  ["compliance", "Compliance"],
+];
+
+export default function ReviewControls({
+  currentStatus,
+  currentJustification,
+  currentCause,
+  onSave,
+}: ReviewControlsProps) {
   const [status, setStatus] = useState<ReviewStatus>(currentStatus);
   const [justification, setJustification] = useState(currentJustification ?? "");
+  const [cause, setCause] = useState<ReviewCause | "">(currentCause ?? "");
+  const [role, setRole] = useState<ReviewerRole>("analista");
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(currentStatus === "pending");
   const [justSaved, setJustSaved] = useState(false);
@@ -28,7 +49,11 @@ export default function ReviewControls({ currentStatus, currentJustification, on
     setSaving(true);
     setError(null);
     try {
-      await onSave(status, justification);
+      // La causa raiz solo aplica a escalada/descartada: si el usuario cambio
+      // de opinion y aprueba, no debe arrastrarse una causa oculta al tablero.
+      const effectiveCause =
+        status === "escalada" || status === "descartada" ? cause || null : null;
+      await onSave(status, justification, effectiveCause, role);
       setEditing(false);
       setJustSaved(true);
       setTimeout(() => setJustSaved(false), 2500);
@@ -75,7 +100,19 @@ export default function ReviewControls({ currentStatus, currentJustification, on
         value={justification}
         onChange={(e) => setJustification(e.target.value)}
       />
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <select
+          className="bg-surface-variant border border-outline-variant rounded-lg px-3 py-2 text-label-md text-on-surface outline-none cursor-pointer"
+          value={role}
+          onChange={(e) => setRole(e.target.value as ReviewerRole)}
+          title="Actúas como (Expediente 360): identidad declarada, no autenticación. Escalar requiere Lead o Compliance."
+        >
+          {ROLE_OPTIONS.map(([value, label]) => (
+            <option key={value} value={value}>
+              Como: {label}
+            </option>
+          ))}
+        </select>
         <select
           className="bg-surface-variant border border-outline-variant rounded-lg px-3 py-2 text-label-md font-bold text-on-surface outline-none cursor-pointer"
           value={status}
@@ -87,6 +124,21 @@ export default function ReviewControls({ currentStatus, currentJustification, on
             </option>
           ))}
         </select>
+        {(status === "escalada" || status === "descartada") && (
+          <select
+            className="bg-surface-variant border border-outline-variant rounded-lg px-3 py-2 text-label-md text-on-surface outline-none cursor-pointer"
+            value={cause}
+            onChange={(e) => setCause(e.target.value as ReviewCause | "")}
+            title="Causa raíz (taxonomía NTSB): hace tu juicio legible por el agente"
+          >
+            <option value="">Causa raíz (opcional)</option>
+            {CAUSE_OPTIONS.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        )}
         <button
           className="px-4 py-2 bg-primary-container text-on-primary-container text-label-md font-bold rounded-lg disabled:opacity-40"
           disabled={saving || status === "pending" || justification.trim().length < 3}

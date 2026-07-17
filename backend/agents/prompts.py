@@ -33,6 +33,9 @@ def _review_feedback_block(review_examples: Optional[list]) -> str:
                 "evidencia_original": ex.evidence,
                 "revision_del_comite": ex.review_status,
                 "justificacion_del_comite": ex.review_justification,
+                # Taxonomia NTSB: la causa raiz hace el juicio del Comite
+                # legible por maquina (no solo prosa).
+                **({"causa_raiz": ex.cause} if ex.cause else {}),
             }
             for ex in review_examples
         ],
@@ -48,7 +51,11 @@ def _review_feedback_block(review_examples: Optional[list]) -> str:
 
 
 def analyst_user_prompt(
-    news: dict, price_comparison: dict, review_examples: Optional[list] = None
+    news: dict,
+    price_comparison: dict,
+    review_examples: Optional[list] = None,
+    violations: Optional[str] = None,
+    contaminate: bool = False,
 ) -> str:
     context = {
         "headline": news["headline"],
@@ -60,12 +67,17 @@ def analyst_user_prompt(
         "price_window_days": price_comparison["window_days"],
         "price_note": price_comparison["note"],
     }
+    # Marcador SOLO de demo (mock): fuerza una salida "alucinada" para mostrar
+    # al Compliance Gate rechazandola. No tiene efecto con un LLM real.
+    demo_marker = "\n[[DEMO_CONTAMINAR]]\n" if contaminate else ""
     return (
         "Analiza el siguiente evento y produce la senal explicable de impacto en el formato "
         "estructurado solicitado.\n\n"
+        + (violations or "")
         + _review_feedback_block(review_examples)
         + "Contexto:\n"
         + json.dumps(context, ensure_ascii=False, indent=2)
+        + demo_marker
     )
 
 

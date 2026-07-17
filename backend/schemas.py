@@ -6,6 +6,19 @@ from pydantic import BaseModel, Field
 Impact = Literal["positive", "negative", "neutral", "uncertain"]
 ReviewStatus = Literal["pending", "revisada", "escalada", "descartada"]
 
+# Taxonomia NTSB: causa raiz cerrada del descarte/escalada (ademas de la
+# justificacion libre). Legible por maquina -> viaja al few-shot del Comite.
+ReviewCause = Literal[
+    "evidencia_insuficiente",
+    "sobre_reaccion_al_precio",
+    "dato_no_soportado_por_fuente",
+    "contexto_faltante",
+    "criterio_del_comite",
+]
+
+# Expediente 360: rol declarado del revisor (no autenticacion criptografica).
+ReviewerRole = Literal["analista", "lead", "compliance"]
+
 
 class InstrumentOut(BaseModel):
     symbol: str
@@ -58,6 +71,56 @@ class ReviewExample(BaseModel):
     evidence: list[str]
     review_status: ReviewStatus
     review_justification: str
+    cause: Optional[ReviewCause] = None
+
+
+class TriageOut(BaseModel):
+    """Nivel de triaje derivado (Manchester/CVSS) con su regla literal."""
+
+    level: Literal["rojo", "naranja", "amarillo", "verde", "azul"]
+    priority: int
+    sla: str
+    rule: str
+
+
+class FreshnessOut(BaseModel):
+    """Vigencia derivada: la senal declara su propia caducidad."""
+
+    pct: float
+    age_days: float
+    half_life_days: float
+    stale: bool
+    rule: str
+
+
+class GateCheck(BaseModel):
+    """Un check determinista del Compliance Gate con su regla literal."""
+
+    item: str
+    passed: bool
+    detail: str
+    rule: str = ""
+
+
+class ComplianceOut(BaseModel):
+    """Veredicto del Compliance Gate 360 (checklist de despacho)."""
+
+    verdict: Literal["ok", "corregida", "marcada"]
+    passed: int
+    total: int
+    checks: list[GateCheck] = Field(default_factory=list)
+
+
+class ReviewEventOut(BaseModel):
+    """Una fila de la cadena de custodia append-only (Expediente 360)."""
+
+    from_status: str
+    to_status: str
+    reviewer: str
+    role: str
+    cause: Optional[str] = None
+    justification: str = ""
+    at: datetime
 
 
 class SignalOut(BaseModel):
@@ -74,22 +137,36 @@ class SignalOut(BaseModel):
     created_at: datetime
     review_status: ReviewStatus
     review_justification: Optional[str] = None
+    review_cause: Optional[ReviewCause] = None
+    reviewed_by: Optional[str] = None
     review_examples_used: list[ReviewExample] = Field(default_factory=list)
     # Caja de Cristal: la UI decide mostrar "Ver ejecucion" sin llamada extra.
     has_trace: bool = False
     has_attribution: bool = False
+    # Compliance Gate 360: checklist de despacho.
+    compliance: Optional[ComplianceOut] = None
+    # Derivados al servir (sin migracion): triaje con SLA y vigencia.
+    triage: Optional[TriageOut] = None
+    freshness: Optional[FreshnessOut] = None
 
 
 class SignalGenerateRequest(BaseModel):
     news_id: str
     instrument: str
     force: bool = False
+    # SOLO demo (mock): fuerza una salida alucinada para mostrar el gate.
+    demo_contaminate: bool = False
 
 
 class ReviewRequest(BaseModel):
     status: Literal["revisada", "escalada", "descartada"]
     # HU3 exige guardar la justificacion del analista: no se acepta vacia.
     justification: str = Field(min_length=3)
+    # NTSB: causa raiz opcional de la taxonomia cerrada.
+    cause: Optional[ReviewCause] = None
+    # Expediente 360: identidad y rol declarados del revisor.
+    reviewer: str = "Analista"
+    role: ReviewerRole = "analista"
 
 
 # --- Salida estructurada que produce el LLM (Asesor) ---
