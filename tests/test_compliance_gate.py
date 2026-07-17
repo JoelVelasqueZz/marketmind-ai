@@ -33,6 +33,25 @@ def test_numeric_grounding_ignores_confidence_percentages():
     assert check["passed"]
 
 
+def test_numeric_grounding_ignores_non_movement_percentages():
+    # Porcentajes legítimos que NO son movimiento de precio no deben marcarse
+    # (peso en cartera, volatilidad, consenso, rango sin verbo de movimiento).
+    for text in [
+        "El bono pesa 30% de la cartera; el evento fue relevante.",
+        "La volatilidad anual ronda el 15%.",
+        "El 100% de los analistas coincide en el riesgo.",
+    ]:
+        check = _check_numeric_grounding([text, "Subió +2.35%."], 2.35)
+        assert check["passed"], f"falso positivo con: {text}"
+
+
+def test_numeric_grounding_catches_wrong_direction():
+    # El precio CAYÓ 2.35% pero la evidencia dice que SUBIÓ +2.35%: dirección
+    # inventada = violación (comparación con signo).
+    check = _check_numeric_grounding(["El bono subió +2.35% en la ventana."], -2.35)
+    assert not check["passed"]
+
+
 def test_grounding_tolerates_rounding():
     check = _check_numeric_grounding(["Movimiento de +2.4% aprox."], 2.35)
     assert check["passed"]

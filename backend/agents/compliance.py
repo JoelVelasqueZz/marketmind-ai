@@ -13,30 +13,55 @@ auto-correccion, contador acotado) o marca la senal si persisten.
 """
 import re
 
+from backend.agents.guardrails import contains_trade_language, normalize_text
+
 # Tolerancia al comparar un % citado contra el movimiento real (permite el
 # redondeo a 1-2 decimales de un LLM: "2.4%" vs 2.35%).
 PCT_TOLERANCE = 0.15
 
 _PCT_RE = re.compile(r"([-+]?\d+(?:[.,]\d+)?)\s*%")
-# Un % precedido por lenguaje de confianza/probabilidad NO es una cifra de
-# movimiento de precio — no se ancla contra change_pct.
-_CONFIDENCE_CTX = re.compile(r"(confian|confidence|probabil|certeza|nivel)", re.IGNORECASE)
+# Solo se ancla contra change_pct un % que este SINTACTICAMENTE ligado al
+# movimiento de precio (subio/cayo/movimiento/paso de...). Asi un % legitimo
+# que no es de movimiento (peso en cartera, volatilidad, "100% de analistas")
+# no genera un falso positivo.
+_MOVE_CTX = re.compile(
+    r"(sub[io]|baj|cay|cae|avanz|retroced|movi|cambi|var[io]|desplom|dispar"
+    r"|impuls|alza|ca[io]da|paso? de|paso? a|gano|perd|rally|rebot|correc)",
+    re.IGNORECASE,
+)
+# Aunque haya contexto de movimiento, un % de confianza/probabilidad no es una
+# cifra de precio.
+_CONFIDENCE_CTX = re.compile(r"(confian|confidence|probabil|certeza)", re.IGNORECASE)
 
 
-def _cited_move_pcts(evidence: list[str]) -> list[float]:
-    pcts: list[float] = []
+def _cited_move_pcts(evidence: list[str]) -> list[tuple[float, bool]]:
+    """(valor, tenia_signo_explicito) de los % que se citan como movimiento."""
+    cited: list[tuple[float, bool]] = []
     for text in evidence:
         for match in _PCT_RE.finditer(text):
-            context = text[max(0, match.start() - 25) : match.start()]
-            if _CONFIDENCE_CTX.search(context):
+            window = normalize_text(text[max(0, match.start() - 45) : match.end()])
+            if _CONFIDENCE_CTX.search(window):
                 continue
-            pcts.append(float(match.group(1).replace(",", ".")))
-    return pcts
+            if not _MOVE_CTX.search(window):
+                continue
+            raw = match.group(1)
+            cited.append((float(raw.replace(",", ".")), raw[0] in "+-"))
+    return cited
 
 
 def _check_numeric_grounding(evidence: list[str], change_pct: float) -> dict:
     cited = _cited_move_pcts(evidence)
-    mismatched = [p for p in cited if abs(abs(p) - abs(change_pct)) > PCT_TOLERANCE]
+    mismatched: list[float] = []
+    for value, signed in cited:
+        # Con signo explicito se compara la direccion tambien (una CAIDA citada
+        # como subida es una violacion); sin signo, solo la magnitud.
+        ok = (
+            abs(value - change_pct) <= PCT_TOLERANCE
+            if signed
+            else abs(abs(value) - abs(change_pct)) <= PCT_TOLERANCE
+        )
+        if not ok:
+            mismatched.append(value)
     if mismatched:
         detail = (
             f"Cifras de movimiento citadas que no coinciden con el dato real "
@@ -87,8 +112,9 @@ def run_compliance_checks(signal_data: dict, news: dict) -> list[dict]:
         {
             "item": "accion_no_es_orden",
             "rule": "suggested_action nunca ejecuta compra/venta",
-            "passed": "descartada por contener lenguaje de ejecucion" not in action.lower()
-            and bool(action),
+            # Check independiente (regex propio, no el sentinel del guardrail):
+            # detecta lenguaje de orden por si mismo.
+            "passed": bool(action) and not contains_trade_language(action),
             "detail": "accion de investigacion/revision humana",
         },
     ]

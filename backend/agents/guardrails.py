@@ -20,10 +20,17 @@ _FORBIDDEN_TRADE_LANGUAGE = re.compile(
 )
 
 
-def _normalize(text: str) -> str:
+def normalize_text(text: str) -> str:
     """Minusculas y sin marcas diacriticas: 'Posición' -> 'posicion'."""
     decomposed = unicodedata.normalize("NFD", text)
     return "".join(c for c in decomposed if not unicodedata.combining(c)).lower()
+
+
+def contains_trade_language(text: str) -> bool:
+    """True si el texto contiene lenguaje de ejecucion de ordenes. Reutilizable
+    por el Compliance Gate para un check independiente (no acoplado al sentinel
+    del reemplazo)."""
+    return bool(_FORBIDDEN_TRADE_LANGUAGE.search(normalize_text(text)))
 
 
 def ensure_research_action(text: str, instrument: str) -> tuple[str, bool]:
@@ -32,7 +39,7 @@ def ensure_research_action(text: str, instrument: str) -> tuple[str, bool]:
     Si la accion contiene lenguaje de ejecucion de ordenes, se sustituye por
     una accion de revision humana en vez de publicarse.
     """
-    if _FORBIDDEN_TRADE_LANGUAGE.search(_normalize(text)):
+    if contains_trade_language(text):
         return (
             f"Revisar manualmente este evento sobre {instrument} con un analista humano "
             "(la accion propuesta por el modelo fue descartada por contener lenguaje de "
