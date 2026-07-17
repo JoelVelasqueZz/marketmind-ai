@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from backend.agents.llm import TransientLLMError
+from backend.agents.llm import LLMOutputInvalid, TransientLLMError
 from backend.config import CORS_ORIGINS, LLM_MODE
 from backend.db import init_db
 from backend.routers import briefing, instruments, news, prices, signals, tasks
@@ -51,6 +51,19 @@ async def transient_llm_error_handler(request: Request, exc: TransientLLMError):
             "detail": (
                 "El proveedor de IA esta temporalmente saturado (alta demanda). "
                 "Intenta de nuevo en unos segundos."
+            )
+        },
+    )
+
+
+@app.exception_handler(LLMOutputInvalid)
+async def llm_output_invalid_handler(request: Request, exc: LLMOutputInvalid):
+    return JSONResponse(
+        status_code=502,
+        content={
+            "detail": (
+                "El modelo devolvio una respuesta invalida y fue descartada por seguridad. "
+                "Intenta generar de nuevo."
             )
         },
     )

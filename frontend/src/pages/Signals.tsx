@@ -58,7 +58,7 @@ export default function Signals() {
       setCurrentNews(news);
       setHistory((prev) => [signal, ...prev]);
     } catch (err) {
-      setError(String(err));
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }

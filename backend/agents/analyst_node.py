@@ -5,6 +5,7 @@ forma aislada, con el LLM mockeable via LLMClient. Produce la senal
 explicable de impacto (HU2): impact, confidence, evidence, price_comparison,
 disclaimer, suggested_action. Nunca incluye una accion de compra/venta.
 """
+from backend.agents.guardrails import ensure_research_action
 from backend.agents.llm import LLMClient
 from backend.agents.prompts import ANALYST_SYSTEM_PROMPT, analyst_user_prompt
 from backend.config import DISCLAIMER
@@ -29,6 +30,10 @@ def run_analyst(
         schema=AnalystLLMOutput,
     )
 
+    suggested_action, _ = ensure_research_action(
+        result.suggested_action, price_comparison["instrument"]
+    )
+
     return {
         "news_id": news["id"],
         "instrument": price_comparison["instrument"],
@@ -38,7 +43,7 @@ def run_analyst(
         "sources": [news["source"]],
         "price_comparison": price_comparison,
         "disclaimer": DISCLAIMER,
-        "suggested_action": result.suggested_action,
+        "suggested_action": suggested_action,
     }
 
 

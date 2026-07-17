@@ -88,8 +88,10 @@ def generate_briefing(watchlist_id: str, session: Session, force: bool = False) 
             if existing_task is not None:
                 # Ya existe un analisis Y una tarea para este par (noticia, instrumento):
                 # reusar sin volver a llamar al LLM (ahorra cuota, evita duplicados).
+                # El resumen del Asesor viene persistido en la tarea; tareas
+                # anteriores a esa columna caen a la evidencia del Analista.
                 research_action = existing_task.title
-                executive_summary = signal.evidence
+                executive_summary = existing_task.executive_summary or signal.evidence
             else:
                 # Hay senal pero nunca se armo un briefing con ella: aplica el
                 # mismo ruteo que el grafo (neutral de baja confianza no gasta
@@ -113,6 +115,7 @@ def generate_briefing(watchlist_id: str, session: Session, force: bool = False) 
                         instrument=instrument.upper(),
                         title=research_action,
                         description=f"Generado a partir de: {news['headline']}",
+                        executive_summary=executive_summary,
                     )
                 )
                 session.commit()
@@ -141,6 +144,7 @@ def generate_briefing(watchlist_id: str, session: Session, force: bool = False) 
                     instrument=instrument.upper(),
                     title=briefing_item_data["research_action"],
                     description=f"Generado a partir de: {news['headline']}",
+                    executive_summary=briefing_item_data["executive_summary"],
                 )
             )
             session.commit()

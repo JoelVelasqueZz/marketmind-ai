@@ -22,14 +22,18 @@ export default function ReviewControls({ currentStatus, currentJustification, on
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(currentStatus === "pending");
   const [justSaved, setJustSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSave() {
     setSaving(true);
+    setError(null);
     try {
       await onSave(status, justification);
       setEditing(false);
       setJustSaved(true);
       setTimeout(() => setJustSaved(false), 2500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setSaving(false);
     }
@@ -85,12 +89,22 @@ export default function ReviewControls({ currentStatus, currentJustification, on
         </select>
         <button
           className="px-4 py-2 bg-primary-container text-on-primary-container text-label-md font-bold rounded-lg disabled:opacity-40"
-          disabled={saving || status === "pending"}
+          disabled={saving || status === "pending" || justification.trim().length < 3}
           onClick={handleSave}
+          title={
+            justification.trim().length < 3
+              ? "Escribe una justificación (HU3: toda revisión guarda su justificación)"
+              : undefined
+          }
         >
           {saving ? "Guardando…" : "Guardar"}
         </button>
       </div>
+      {error && (
+        <p className="text-label-sm text-error font-bold mt-2">
+          No se pudo guardar la revisión: {error}
+        </p>
+      )}
     </div>
   );
 }

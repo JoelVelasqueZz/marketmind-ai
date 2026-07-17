@@ -38,7 +38,7 @@ export default function Briefing() {
       setBriefing(result);
       refreshTasks();
     } catch (err) {
-      setError(String(err));
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }

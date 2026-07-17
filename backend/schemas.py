@@ -44,7 +44,7 @@ class AnalystLLMOutput(BaseModel):
 
     impact: Impact
     confidence: float = Field(ge=0.0, le=1.0)
-    evidence: list[str]
+    evidence: list[str] = Field(min_length=2)
     reasoning: str
     suggested_action: str
 
@@ -85,7 +85,8 @@ class SignalGenerateRequest(BaseModel):
 
 class ReviewRequest(BaseModel):
     status: Literal["revisada", "escalada", "descartada"]
-    justification: str
+    # HU3 exige guardar la justificacion del analista: no se acepta vacia.
+    justification: str = Field(min_length=3)
 
 
 # --- Salida estructurada que produce el LLM (Asesor) ---

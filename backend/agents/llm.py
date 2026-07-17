@@ -17,7 +17,7 @@ import json
 import time
 from typing import Callable, Type, TypeVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from backend.config import (
     ANTHROPIC_API_KEY,
@@ -36,6 +36,14 @@ BASE_DELAY_SECONDS = 1.5
 
 class TransientLLMError(Exception):
     """Fallo transitorio del proveedor de LLM (503/429) tras agotar los reintentos."""
+
+
+class LLMOutputInvalid(Exception):
+    """El proveedor devolvio una salida que no valida contra el schema.
+
+    Se descarta por seguridad en vez de publicarla: preferimos fallar honesto
+    a mostrar una senal con datos malformados (mitigacion de riesgos).
+    """
 
 
 def _with_retry(call: Callable[[], T], is_transient: Callable[[Exception], bool]) -> T:
@@ -64,13 +72,18 @@ class LLMClient:
         self.model = model or LLM_MODEL
 
     def generate_structured(self, system_prompt: str, user_prompt: str, schema: Type[T]) -> T:
-        if self.mode == "gemini":
-            return self._generate_gemini(system_prompt, user_prompt, schema)
-        if self.mode == "claude":
-            return self._generate_claude(system_prompt, user_prompt, schema)
-        if self.mode == "deepseek":
-            return self._generate_deepseek(system_prompt, user_prompt, schema)
-        return self._generate_mock(system_prompt, user_prompt, schema)
+        try:
+            if self.mode == "gemini":
+                return self._generate_gemini(system_prompt, user_prompt, schema)
+            if self.mode == "claude":
+                return self._generate_claude(system_prompt, user_prompt, schema)
+            if self.mode == "deepseek":
+                return self._generate_deepseek(system_prompt, user_prompt, schema)
+            return self._generate_mock(system_prompt, user_prompt, schema)
+        except (ValidationError, json.JSONDecodeError) as exc:
+            raise LLMOutputInvalid(
+                f"La salida del proveedor '{self.mode}' no valida contra {schema.__name__}: {exc}"
+            ) from exc
 
     # --- Gemini ---
     def _generate_gemini(self, system_prompt: str, user_prompt: str, schema: Type[T]) -> T:
@@ -106,19 +119,25 @@ class LLMClient:
 
     # --- Claude (alterno) ---
     def _generate_claude(self, system_prompt: str, user_prompt: str, schema: Type[T]) -> T:
+        # anthropic==0.40.0 no tiene messages.parse: se fuerza JSON via prompt
+        # con el JSON Schema (mismo patron que DeepSeek) y se valida con Pydantic.
         import anthropic
 
         client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        schema_prompt = (
+            f"{system_prompt}\n\nResponde EXCLUSIVAMENTE con un JSON valido (sin texto extra, sin "
+            f"markdown) que cumpla este JSON Schema:\n{json.dumps(schema.model_json_schema(), ensure_ascii=False)}"
+        )
 
         def call() -> T:
-            message = client.messages.parse(
+            message = client.messages.create(
                 model=self.model if "claude" in self.model else "claude-sonnet-5",
                 max_tokens=1024,
-                system=system_prompt,
+                temperature=0.2,
+                system=schema_prompt,
                 messages=[{"role": "user", "content": user_prompt}],
-                response_format=schema,
             )
-            return message.parsed
+            return schema.model_validate_json(message.content[0].text)
 
         def is_transient(exc: Exception) -> bool:
             return isinstance(exc, (anthropic.InternalServerError, anthropic.RateLimitError, anthropic.APIConnectionError))

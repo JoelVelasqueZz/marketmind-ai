@@ -49,5 +49,8 @@ class TaskAlert(SQLModel, table=True):
     instrument: str
     title: str
     description: str
+    # Resumen del Asesor persistido para que regenerar el briefing devuelva el
+    # mismo contenido (nullable: tareas previas a esta columna no lo tienen).
+    executive_summary: Optional[list] = Field(default=None, sa_column=Column(JSON))
     status: str = Field(default="open")  # open | done
     created_at: datetime = Field(default_factory=_now)

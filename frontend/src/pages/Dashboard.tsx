@@ -19,16 +19,22 @@ export default function Dashboard() {
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  function load() {
+    setLoading(true);
+    setError(null);
+    Promise.all([api.getInstruments(), api.getSignals()])
+      .then(([instrumentsList, signalsList]) => {
+        setInstruments(instrumentsList);
+        setSignals(signalsList);
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : String(err)))
+      .finally(() => setLoading(false));
+  }
 
   useEffect(() => {
-    Promise.all([
-      api.getInstruments().catch(() => []),
-      api.getSignals().catch(() => []),
-    ]).then(([instrumentsList, signalsList]) => {
-      setInstruments(instrumentsList);
-      setSignals(signalsList);
-      setLoading(false);
-    });
+    load();
   }, []);
 
   // Noticias distintas que ya tienen al menos una senal generada (no "noticias
@@ -67,6 +73,21 @@ export default function Dashboard() {
       <p className="text-body-lg text-on-surface-variant mb-stack-lg">
         Monitorea noticias, analiza impacto y genera briefings con IA para revisión humana — Track 5.
       </p>
+
+      {error && (
+        <div className="mb-stack-lg flex items-center justify-between gap-4 bg-surface-container border border-error/40 rounded-xl p-4">
+          <p className="text-body-md text-on-surface">
+            No se pudo conectar con el backend (puede estar despertando — el plan gratuito se duerme
+            tras inactividad): {error}
+          </p>
+          <button
+            className="px-4 py-2 bg-primary-container text-on-primary-container text-label-md font-bold rounded-lg shrink-0"
+            onClick={load}
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-stack-lg">
         {loading ? (

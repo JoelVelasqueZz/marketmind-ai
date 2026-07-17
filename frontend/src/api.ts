@@ -18,8 +18,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
   });
   if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`API ${res.status}: ${detail}`);
+    const raw = await res.text();
+    // El backend devuelve {"detail": "..."} — mostrar ese mensaje, no el JSON crudo.
+    let message = raw;
+    try {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed?.detail === "string") message = parsed.detail;
+    } catch {
+      /* cuerpo no-JSON: se muestra tal cual */
+    }
+    throw new Error(message || `Error ${res.status} del servidor`);
   }
   return res.json() as Promise<T>;
 }
