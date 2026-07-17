@@ -10,6 +10,7 @@ una lectura de sus pesos: la explicacion resultante es causal y demostrable
 se cachea en Signal.attribution con el llm_mode usado — si difiere del de la
 senal original, el visor debe avisarlo (comparar manzanas con manzanas).
 """
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from sqlmodel import Session
@@ -48,10 +49,19 @@ def compute_attribution(signal: Signal, session: Session, force: bool = False) -
         "change_pct": 0.0,
         "note": "(sondeo contrafactual: sin variacion de precio)",
     }
-    no_price = run_analyst(news, flat_pc, review_examples=review_examples)
-
     neutral_news = {**news, "headline": "", "summary": ""}
-    no_headline = run_analyst(neutral_news, base_pc, review_examples=review_examples)
+
+    # Las 2 re-ejecuciones son independientes (cada una crea su propio LLMClient
+    # dentro de run_analyst) y son I/O-bound: en paralelo, el sondeo tarda lo
+    # que tarda la mas lenta de las dos, no la suma de ambas — evita superar el
+    # timeout del proxy en produccion.
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        future_no_price = executor.submit(run_analyst, news, flat_pc, review_examples=review_examples)
+        future_no_headline = executor.submit(
+            run_analyst, neutral_news, base_pc, review_examples=review_examples
+        )
+        no_price = future_no_price.result()
+        no_headline = future_no_headline.result()
 
     attribution = {
         "v": ATTRIBUTION_VERSION,
