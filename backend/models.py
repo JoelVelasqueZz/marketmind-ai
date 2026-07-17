@@ -37,6 +37,12 @@ class Signal(SQLModel, table=True):
     review_justification: Optional[str] = None
     reviewed_at: Optional[datetime] = None
 
+    # Caja de Cristal: traza de ejecucion escrita por el orquestador (contrato
+    # v1 en backend/agents/trace.py) y sondeo contrafactual cacheado. Nullable:
+    # senales anteriores a estas columnas no los tienen (la UI degrada).
+    execution_trace: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    attribution: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+
 
 class TaskAlert(SQLModel, table=True):
     """Tarea/alerta de investigacion creada para revision humana (HU3).
@@ -49,5 +55,8 @@ class TaskAlert(SQLModel, table=True):
     instrument: str
     title: str
     description: str
+    # Resumen del Asesor persistido para que regenerar el briefing devuelva el
+    # mismo contenido (nullable: tareas previas a esta columna no lo tienen).
+    executive_summary: Optional[list] = Field(default=None, sa_column=Column(JSON))
     status: str = Field(default="open")  # open | done
     created_at: datetime = Field(default_factory=_now)

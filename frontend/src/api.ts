@@ -1,4 +1,5 @@
 import type {
+  Attribution,
   Briefing,
   Health,
   Instrument,
@@ -6,6 +7,7 @@ import type {
   PricePoint,
   Signal,
   TaskAlert,
+  TraceDoc,
   Watchlist,
   WatchlistOverview,
 } from "./types";
@@ -18,8 +20,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
   });
   if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`API ${res.status}: ${detail}`);
+    const raw = await res.text();
+    // El backend devuelve {"detail": "..."} — mostrar ese mensaje, no el JSON crudo.
+    let message = raw;
+    try {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed?.detail === "string") message = parsed.detail;
+    } catch {
+      /* cuerpo no-JSON: se muestra tal cual */
+    }
+    throw new Error(message || `Error ${res.status} del servidor`);
   }
   return res.json() as Promise<T>;
 }
@@ -63,6 +73,13 @@ export const api = {
     request<Signal>(`/api/signals/${signalId}/review`, {
       method: "POST",
       body: JSON.stringify({ status, justification }),
+    }),
+
+  getSignalTrace: (signalId: string) => request<TraceDoc>(`/api/signals/${signalId}/trace`),
+
+  computeAttribution: (signalId: string, force = false) =>
+    request<Attribution>(`/api/signals/${signalId}/attribution${force ? "?force=true" : ""}`, {
+      method: "POST",
     }),
 
   getWatchlists: () => request<Watchlist[]>("/api/briefing/watchlists"),

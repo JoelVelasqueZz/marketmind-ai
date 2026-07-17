@@ -33,7 +33,7 @@ export default function Radar() {
         q: q || undefined,
       })
       .then(setNews)
-      .catch((err) => setError(String(err)))
+      .catch((err) => setError(err instanceof Error ? err.message : String(err)))
       .finally(() => setLoading(false));
   }, [filters, q]);
 

@@ -19,8 +19,13 @@ from langgraph.graph import END, START, StateGraph
 from backend.agents.advisor_node import advisor_node
 from backend.agents.analyst_node import analyst_node
 from backend.agents.llm import LLMClient
+from backend.agents.trace import TraceRecorder
 
 MONITOR_CONFIDENCE_THRESHOLD = 0.5
+
+# Regla de la arista como string literal: la traza la registra tal cual para
+# que el visor muestre la condicion exacta que se evaluo (no una parafrasis).
+MONITOR_RULE = "impact == 'neutral' and confidence < 0.5"
 
 
 class AgentState(TypedDict, total=False):
@@ -28,6 +33,7 @@ class AgentState(TypedDict, total=False):
     price_comparison: dict
     llm: Optional[LLMClient]
     review_examples: Optional[list]
+    trace: Optional[TraceRecorder]
     signal: Optional[dict]
     briefing_item: Optional[dict]
 
@@ -62,17 +68,48 @@ def build_monitor_item(signal: dict, news: dict) -> dict:
     }
 
 
+def record_edge_decision(trace, impact: str, confidence: float, target: str) -> None:
+    """Evento edge_decision con la regla literal y sus valores.
+
+    Compartido entre el grafo (route_after_analyst) y la rama de reuso del
+    briefing, que aplica el mismo criterio fuera del grafo.
+    """
+    if trace is None:
+        return
+    trace.event(
+        "edge_decision",
+        edge="route_after_analyst",
+        rule=MONITOR_RULE,
+        inputs={"impact": impact, "confidence": confidence},
+        threshold=MONITOR_CONFIDENCE_THRESHOLD,
+        target=target,
+        llm_cost="$0 (sin llamada LLM)" if target == "monitor" else "1 llamada LLM (Asesor)",
+    )
+
+
 def route_after_analyst(state: AgentState) -> str:
     """Decide si la senal del Analista amerita al Asesor o solo monitoreo."""
     signal = state["signal"]
-    if should_route_to_monitor(signal["impact"], signal["confidence"]):
-        return "monitor"
-    return "advisor"
+    target = "monitor" if should_route_to_monitor(signal["impact"], signal["confidence"]) else "advisor"
+    # El evento nace donde se decide: single source of truth del ruteo.
+    record_edge_decision(state.get("trace"), signal["impact"], signal["confidence"], target)
+    return target
 
 
 def monitor_node(state: AgentState) -> dict:
     """Genera una tarea de monitoreo (no de investigacion) sin llamar al LLM."""
-    return {"briefing_item": build_monitor_item(state["signal"], state["news"])}
+    trace = state.get("trace")
+    if trace is not None:
+        trace.event("node_start", node="monitor")
+    item = build_monitor_item(state["signal"], state["news"])
+    if trace is not None:
+        trace.event(
+            "node_end",
+            node="monitor",
+            duration_ms=0,
+            output_digest={"research_action": item["research_action"][:80]},
+        )
+    return {"briefing_item": item}
 
 
 def build_graph():
@@ -97,6 +134,7 @@ def run_pipeline(
     price_comparison: dict,
     llm: LLMClient | None = None,
     review_examples: list | None = None,
+    trace: TraceRecorder | None = None,
 ) -> AgentState:
     """Ejecuta analyst_node -> (advisor|monitor) end-to-end para un item de briefing.
 
@@ -104,6 +142,8 @@ def run_pipeline(
     Analista y verificar el ruteo; en produccion queda None y cada nodo crea
     su LLMClient segun LLM_MODE. review_examples son revisiones humanas
     pasadas del mismo instrumento, reinyectadas como few-shot (HU3).
+    trace registra la ejecucion completa para la Caja de Cristal: viaja por
+    referencia en el estado del grafo hasta los nodos y la arista condicional.
     """
     return graph.invoke(
         {
@@ -111,5 +151,6 @@ def run_pipeline(
             "price_comparison": price_comparison,
             "llm": llm,
             "review_examples": review_examples,
+            "trace": trace,
         }
     )

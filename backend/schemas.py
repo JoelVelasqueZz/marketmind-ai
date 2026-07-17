@@ -44,7 +44,7 @@ class AnalystLLMOutput(BaseModel):
 
     impact: Impact
     confidence: float = Field(ge=0.0, le=1.0)
-    evidence: list[str]
+    evidence: list[str] = Field(min_length=2)
     reasoning: str
     suggested_action: str
 
@@ -75,6 +75,9 @@ class SignalOut(BaseModel):
     review_status: ReviewStatus
     review_justification: Optional[str] = None
     review_examples_used: list[ReviewExample] = Field(default_factory=list)
+    # Caja de Cristal: la UI decide mostrar "Ver ejecucion" sin llamada extra.
+    has_trace: bool = False
+    has_attribution: bool = False
 
 
 class SignalGenerateRequest(BaseModel):
@@ -85,7 +88,8 @@ class SignalGenerateRequest(BaseModel):
 
 class ReviewRequest(BaseModel):
     status: Literal["revisada", "escalada", "descartada"]
-    justification: str
+    # HU3 exige guardar la justificacion del analista: no se acepta vacia.
+    justification: str = Field(min_length=3)
 
 
 # --- Salida estructurada que produce el LLM (Asesor) ---
