@@ -49,3 +49,7 @@ def test_migration_adds_missing_columns_and_is_idempotent():
         # La consulta que antes daba OperationalError ahora funciona.
         with engine.connect() as conn:
             conn.execute(text("SELECT execution_trace, attribution FROM signal")).fetchall()
+
+        # En Windows, sqlite mantiene el archivo abierto hasta que se libera el
+        # engine; sin esto, TemporaryDirectory falla al limpiar (PermissionError).
+        engine.dispose()
