@@ -52,6 +52,11 @@ def _mock_analyst(context: dict) -> AnalystLLMOutput:
     else:
         confidence = round(min(0.95, 0.55 + magnitude / 15), 2)
 
+    if not headline:
+        # Sondeo contrafactual (sin titular): solo queda el precio como
+        # evidencia -> la confianza cae, igual que lo haria un LLM real.
+        confidence = round(max(0.1, confidence - 0.25), 2)
+
     evidence = [
         f"Noticia de {source}: \"{headline}\".",
         price_note,

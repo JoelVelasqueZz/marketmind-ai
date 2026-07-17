@@ -5,6 +5,7 @@ from sqlmodel import Session
 
 from backend.db import get_session
 from backend.schemas import ReviewRequest, SignalGenerateRequest, SignalOut
+from backend.services import attribution as attribution_service
 from backend.services import signals as signals_service
 
 router = APIRouter(prefix="/api/signals", tags=["signals"])
@@ -45,3 +46,17 @@ def get_signal_trace(signal_id: str, session: Session = Depends(get_session)):
             detail="Senal anterior a la trazabilidad: no tiene traza de ejecucion registrada.",
         )
     return signal.execution_trace
+
+
+@router.post("/{signal_id}/attribution")
+def compute_signal_attribution(
+    signal_id: str, force: bool = False, session: Session = Depends(get_session)
+):
+    """Sondeo contrafactual '¿Que peso mas?': 2 re-ejecuciones controladas."""
+    signal = signals_service.get_signal(signal_id, session)
+    if signal is None:
+        raise HTTPException(status_code=404, detail="Senal no encontrada")
+    try:
+        return attribution_service.compute_attribution(signal, session, force=force)
+    except signals_service.NewsNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
