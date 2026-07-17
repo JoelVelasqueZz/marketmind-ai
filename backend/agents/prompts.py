@@ -33,6 +33,9 @@ def _review_feedback_block(review_examples: Optional[list]) -> str:
                 "evidencia_original": ex.evidence,
                 "revision_del_comite": ex.review_status,
                 "justificacion_del_comite": ex.review_justification,
+                # Taxonomia NTSB: la causa raiz hace el juicio del Comite
+                # legible por maquina (no solo prosa).
+                **({"causa_raiz": ex.cause} if ex.cause else {}),
             }
             for ex in review_examples
         ],

@@ -9,6 +9,7 @@ import time
 
 from backend.agents.guardrails import ensure_research_action
 from backend.agents.llm import LLMClient
+from backend.agents.pricing import usage_fields
 from backend.agents.prompts import ANALYST_SYSTEM_PROMPT, analyst_user_prompt
 from backend.config import DISCLAIMER
 from backend.schemas import AnalystLLMOutput
@@ -47,6 +48,7 @@ def run_analyst(
             model=getattr(client, "model", "-"),
             latency_ms=round((time.perf_counter() - started) * 1000),
             attempts=getattr(client, "_last_attempts", 0) or 1,
+            **usage_fields(client),
         )
         # Declarado por el modelo (no verificado): se guarda para el visor.
         trace.annotate(reasoning=result.reasoning)

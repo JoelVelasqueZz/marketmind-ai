@@ -70,8 +70,11 @@ class LLMClient:
     def __init__(self, mode: str | None = None, model: str | None = None) -> None:
         self.mode = mode or LLM_MODE
         self.model = model or LLM_MODEL
-        # Intentos de la ultima llamada (telemetria para la traza de ejecucion).
+        # Telemetria de la ultima llamada para la traza de ejecucion:
+        # intentos, y tokens reportados por el proveedor (measured=True) o
+        # estimados len/4 en mock (measured=False).
         self._last_attempts = 0
+        self._last_usage: dict | None = None
 
     def _counted(self, call: Callable[[], T]) -> Callable[[], T]:
         def wrapped() -> T:
@@ -82,6 +85,7 @@ class LLMClient:
 
     def generate_structured(self, system_prompt: str, user_prompt: str, schema: Type[T]) -> T:
         self._last_attempts = 0
+        self._last_usage = None
         try:
             if self.mode == "gemini":
                 return self._generate_gemini(system_prompt, user_prompt, schema)
@@ -90,11 +94,27 @@ class LLMClient:
             if self.mode == "deepseek":
                 return self._generate_deepseek(system_prompt, user_prompt, schema)
             self._last_attempts = 1
-            return self._generate_mock(system_prompt, user_prompt, schema)
+            result = self._generate_mock(system_prompt, user_prompt, schema)
+            # Mock: sin red, tokens estimados (len/4) y honestamente marcados.
+            self._last_usage = {
+                "tokens_in": (len(system_prompt) + len(user_prompt)) // 4,
+                "tokens_out": len(result.model_dump_json()) // 4,
+                "measured": False,
+            }
+            return result
         except (ValidationError, json.JSONDecodeError) as exc:
             raise LLMOutputInvalid(
                 f"La salida del proveedor '{self.mode}' no valida contra {schema.__name__}: {exc}"
             ) from exc
+
+    def _record_usage(self, tokens_in, tokens_out) -> None:
+        if tokens_in is None or tokens_out is None:
+            return
+        self._last_usage = {
+            "tokens_in": int(tokens_in),
+            "tokens_out": int(tokens_out),
+            "measured": True,
+        }
 
     # --- Gemini ---
     def _generate_gemini(self, system_prompt: str, user_prompt: str, schema: Type[T]) -> T:
@@ -115,6 +135,12 @@ class LLMClient:
                     temperature=0.2,
                 ),
             )
+            usage = getattr(response, "usage_metadata", None)
+            if usage is not None:
+                self._record_usage(
+                    getattr(usage, "prompt_token_count", None),
+                    getattr(usage, "candidates_token_count", None),
+                )
             parsed = response.parsed
             if parsed is None:
                 return schema.model_validate_json(response.text)
@@ -148,6 +174,11 @@ class LLMClient:
                 system=schema_prompt,
                 messages=[{"role": "user", "content": user_prompt}],
             )
+            usage = getattr(message, "usage", None)
+            if usage is not None:
+                self._record_usage(
+                    getattr(usage, "input_tokens", None), getattr(usage, "output_tokens", None)
+                )
             return schema.model_validate_json(message.content[0].text)
 
         def is_transient(exc: Exception) -> bool:
@@ -176,6 +207,11 @@ class LLMClient:
                 response_format={"type": "json_object"},
                 temperature=0.2,
             )
+            usage = getattr(completion, "usage", None)
+            if usage is not None:
+                self._record_usage(
+                    getattr(usage, "prompt_tokens", None), getattr(usage, "completion_tokens", None)
+                )
             return schema.model_validate_json(completion.choices[0].message.content)
 
         def is_transient(exc: Exception) -> bool:

@@ -6,6 +6,16 @@ from pydantic import BaseModel, Field
 Impact = Literal["positive", "negative", "neutral", "uncertain"]
 ReviewStatus = Literal["pending", "revisada", "escalada", "descartada"]
 
+# Taxonomia NTSB: causa raiz cerrada del descarte/escalada (ademas de la
+# justificacion libre). Legible por maquina -> viaja al few-shot del Comite.
+ReviewCause = Literal[
+    "evidencia_insuficiente",
+    "sobre_reaccion_al_precio",
+    "dato_no_soportado_por_fuente",
+    "contexto_faltante",
+    "criterio_del_comite",
+]
+
 
 class InstrumentOut(BaseModel):
     symbol: str
@@ -58,6 +68,26 @@ class ReviewExample(BaseModel):
     evidence: list[str]
     review_status: ReviewStatus
     review_justification: str
+    cause: Optional[ReviewCause] = None
+
+
+class TriageOut(BaseModel):
+    """Nivel de triaje derivado (Manchester/CVSS) con su regla literal."""
+
+    level: Literal["rojo", "naranja", "amarillo", "verde", "azul"]
+    priority: int
+    sla: str
+    rule: str
+
+
+class FreshnessOut(BaseModel):
+    """Vigencia derivada: la senal declara su propia caducidad."""
+
+    pct: float
+    age_days: float
+    half_life_days: float
+    stale: bool
+    rule: str
 
 
 class SignalOut(BaseModel):
@@ -74,10 +104,14 @@ class SignalOut(BaseModel):
     created_at: datetime
     review_status: ReviewStatus
     review_justification: Optional[str] = None
+    review_cause: Optional[ReviewCause] = None
     review_examples_used: list[ReviewExample] = Field(default_factory=list)
     # Caja de Cristal: la UI decide mostrar "Ver ejecucion" sin llamada extra.
     has_trace: bool = False
     has_attribution: bool = False
+    # Derivados al servir (sin migracion): triaje con SLA y vigencia.
+    triage: Optional[TriageOut] = None
+    freshness: Optional[FreshnessOut] = None
 
 
 class SignalGenerateRequest(BaseModel):
@@ -90,6 +124,8 @@ class ReviewRequest(BaseModel):
     status: Literal["revisada", "escalada", "descartada"]
     # HU3 exige guardar la justificacion del analista: no se acepta vacia.
     justification: str = Field(min_length=3)
+    # NTSB: causa raiz opcional de la taxonomia cerrada.
+    cause: Optional[ReviewCause] = None
 
 
 # --- Salida estructurada que produce el LLM (Asesor) ---

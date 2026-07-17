@@ -43,7 +43,7 @@ def test_migration_adds_missing_columns_and_is_idempotent():
         inspector = inspect(engine)
         signal_cols = {c["name"] for c in inspector.get_columns("signal")}
         task_cols = {c["name"] for c in inspector.get_columns("taskalert")}
-        assert {"execution_trace", "attribution"} <= signal_cols
+        assert {"execution_trace", "attribution", "review_cause"} <= signal_cols
         assert "executive_summary" in task_cols
 
         # La consulta que antes daba OperationalError ahora funciona.

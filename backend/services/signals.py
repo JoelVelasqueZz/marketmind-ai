@@ -7,8 +7,10 @@ from backend.agents.trace import TraceRecorder
 from backend.config import LLM_MODE, LLM_MODEL
 from backend.models import Signal
 from backend.providers.price_provider import MockPriceProvider
+from backend.services.freshness import compute_freshness
 from backend.services.radar import get_news
-from backend.schemas import PriceComparison, ReviewExample, SignalOut
+from backend.services.triage import compute_triage
+from backend.schemas import FreshnessOut, PriceComparison, ReviewExample, SignalOut, TriageOut
 
 _price_provider = MockPriceProvider()
 
@@ -55,6 +57,7 @@ def list_review_examples(
             evidence=s.evidence,
             review_status=s.review_status,
             review_justification=s.review_justification or "",
+            cause=s.review_cause,
         )
         for s in session.exec(query).all()
     ]
@@ -106,7 +109,13 @@ def get_signal(signal_id: str, session: Session) -> Optional[Signal]:
     return session.get(Signal, signal_id)
 
 
-def review_signal(signal_id: str, status: str, justification: str, session: Session) -> Optional[SignalOut]:
+def review_signal(
+    signal_id: str,
+    status: str,
+    justification: str,
+    session: Session,
+    cause: Optional[str] = None,
+) -> Optional[SignalOut]:
     from datetime import datetime, timezone
 
     signal = session.get(Signal, signal_id)
@@ -114,11 +123,23 @@ def review_signal(signal_id: str, status: str, justification: str, session: Sess
         return None
     signal.review_status = status
     signal.review_justification = justification
+    signal.review_cause = cause
     signal.reviewed_at = datetime.now(timezone.utc)
     session.add(signal)
     session.commit()
     session.refresh(signal)
     return _to_out(signal)
+
+
+def review_cause_counts(session: Session) -> dict[str, int]:
+    """Tablero NTSB: ¿de que se equivoca el Analista segun el Comite?"""
+    reviewed = session.exec(
+        select(Signal).where(Signal.review_cause != None)  # noqa: E711 - SQLAlchemy
+    ).all()
+    counts: dict[str, int] = {}
+    for s in reviewed:
+        counts[s.review_cause] = counts.get(s.review_cause, 0) + 1
+    return counts
 
 
 def _to_out(signal: Signal) -> SignalOut:
@@ -136,6 +157,11 @@ def _to_out(signal: Signal) -> SignalOut:
         created_at=signal.created_at,
         review_status=signal.review_status,
         review_justification=signal.review_justification,
+        review_cause=signal.review_cause,
         has_trace=bool(signal.execution_trace),
         has_attribution=bool(signal.attribution),
+        triage=TriageOut(
+            **compute_triage(signal.impact, signal.confidence, signal.price_comparison["change_pct"])
+        ),
+        freshness=FreshnessOut(**compute_freshness(signal.created_at, signal.instrument)),
     )

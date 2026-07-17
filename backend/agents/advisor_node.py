@@ -9,6 +9,7 @@ import time
 
 from backend.agents.guardrails import ensure_research_action
 from backend.agents.llm import LLMClient
+from backend.agents.pricing import usage_fields
 from backend.agents.prompts import ADVISOR_SYSTEM_PROMPT, advisor_user_prompt
 from backend.schemas import AdvisorLLMOutput
 
@@ -33,6 +34,7 @@ def run_advisor(signal: dict, news: dict, llm: LLMClient | None = None, trace=No
             model=getattr(client, "model", "-"),
             latency_ms=round((time.perf_counter() - started) * 1000),
             attempts=getattr(client, "_last_attempts", 0) or 1,
+            **usage_fields(client),
         )
 
     research_action, replaced = ensure_research_action(result.research_action, signal["instrument"])

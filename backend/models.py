@@ -35,6 +35,8 @@ class Signal(SQLModel, table=True):
 
     review_status: str = Field(default="pending")  # pending | revisada | escalada | descartada
     review_justification: Optional[str] = None
+    # NTSB: causa raiz taxonomizada del descarte/escalada (schemas.ReviewCause).
+    review_cause: Optional[str] = None
     reviewed_at: Optional[datetime] = None
 
     # Caja de Cristal: traza de ejecucion escrita por el orquestador (contrato

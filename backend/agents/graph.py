@@ -72,10 +72,18 @@ def record_edge_decision(trace, impact: str, confidence: float, target: str) -> 
     """Evento edge_decision con la regla literal y sus valores.
 
     Compartido entre el grafo (route_after_analyst) y la rama de reuso del
-    briefing, que aplica el mismo criterio fuera del grafo.
+    briefing, que aplica el mismo criterio fuera del grafo. Al derivar a
+    monitoreo registra ademas el ahorro estimado (taximetro): el costo de la
+    llamada del Asesor que NO se hizo, aproximado por la llamada del Analista
+    de esta misma corrida (mismo proveedor y tamano de contexto similar).
     """
     if trace is None:
         return
+    extra: dict = {}
+    if target == "monitor":
+        analyst_calls = [e for e in trace.events if e.get("type") == "llm_call"]
+        if analyst_calls and "cost_usd" in analyst_calls[-1]:
+            extra["saved_usd_est"] = analyst_calls[-1]["cost_usd"]
     trace.event(
         "edge_decision",
         edge="route_after_analyst",
@@ -84,6 +92,7 @@ def record_edge_decision(trace, impact: str, confidence: float, target: str) -> 
         threshold=MONITOR_CONFIDENCE_THRESHOLD,
         target=target,
         llm_cost="$0 (sin llamada LLM)" if target == "monitor" else "1 llamada LLM (Asesor)",
+        **extra,
     )
 
 

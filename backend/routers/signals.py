@@ -26,9 +26,17 @@ def generate_signal(payload: SignalGenerateRequest, session: Session = Depends(g
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@router.get("/review-causes")
+def review_causes(session: Session = Depends(get_session)):
+    """Tablero NTSB: distribucion de causas raiz de descartes/escaladas."""
+    return signals_service.review_cause_counts(session)
+
+
 @router.post("/{signal_id}/review", response_model=SignalOut)
 def review_signal(signal_id: str, payload: ReviewRequest, session: Session = Depends(get_session)):
-    result = signals_service.review_signal(signal_id, payload.status, payload.justification, session)
+    result = signals_service.review_signal(
+        signal_id, payload.status, payload.justification, session, cause=payload.cause
+    )
     if result is None:
         raise HTTPException(status_code=404, detail="Senal no encontrada")
     return result
