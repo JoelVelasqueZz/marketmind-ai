@@ -4,8 +4,9 @@ import { api } from "../api";
 import Disclaimer from "../components/Disclaimer";
 import ImpactBadge from "../components/ImpactBadge";
 import ReviewControls, { STATUS_LABEL } from "../components/ReviewControls";
+import TraceDrawer from "../components/TraceDrawer";
 import { formatPct } from "../lib/format";
-import type { Briefing as BriefingType, ReviewStatus, TaskAlert, Watchlist } from "../types";
+import type { Briefing as BriefingType, ReviewStatus, Signal, TaskAlert, Watchlist } from "../types";
 
 export default function Briefing() {
   const [watchlists, setWatchlists] = useState<Watchlist[]>([]);
@@ -14,6 +15,7 @@ export default function Briefing() {
   const [tasks, setTasks] = useState<TaskAlert[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [traceSignal, setTraceSignal] = useState<Signal | null>(null);
 
   useEffect(() => {
     api.getWatchlists().then((w) => {
@@ -149,6 +151,8 @@ export default function Briefing() {
 
       {error && <div className="mb-stack-md text-body-md text-error">Error: {error}</div>}
 
+      {traceSignal && <TraceDrawer signal={traceSignal} onClose={() => setTraceSignal(null)} />}
+
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 space-y-4">
           {!briefing && !loading && (
@@ -175,6 +179,19 @@ export default function Briefing() {
                   <span className="font-mono-data text-mono-data text-on-surface-variant">
                     {formatPct(item.price_change_pct)}
                   </span>
+                  <button
+                    className="flex items-center gap-1 text-label-sm font-bold text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+                    disabled={!item.signal.has_trace}
+                    title={
+                      item.signal.has_trace
+                        ? "Caja de Cristal: la traza de ejecución de esta señal"
+                        : "Señal anterior a la trazabilidad"
+                    }
+                    onClick={() => setTraceSignal(item.signal)}
+                  >
+                    <span className="material-symbols-outlined text-sm">account_tree</span>
+                    Ver ejecución
+                  </button>
                 </div>
               </div>
 

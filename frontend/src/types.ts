@@ -57,6 +57,64 @@ export interface Signal {
   review_status: ReviewStatus;
   review_justification?: string | null;
   review_examples_used: ReviewExample[];
+  has_trace: boolean;
+  has_attribution: boolean;
+}
+
+// --- Caja de Cristal: traza de ejecucion escrita por el orquestador ---
+
+export interface TraceEvent {
+  t_ms: number;
+  type: string;
+  node?: string;
+  edge?: string;
+  rule?: string;
+  inputs?: { impact: Impact; confidence: number };
+  threshold?: number;
+  target?: string;
+  llm_cost?: string;
+  provider?: string;
+  model?: string;
+  latency_ms?: number;
+  attempts?: number;
+  duration_ms?: number;
+  output_digest?: Record<string, unknown>;
+  signal_id?: string;
+  scope?: string;
+  field?: string;
+  action?: string;
+}
+
+export interface TraceRun {
+  llm_mode: string;
+  model: string;
+  path: "analysis" | "briefing" | "briefing-reuse";
+  started_at: string;
+  truncated: boolean;
+  reasoning?: string | null;
+  events: TraceEvent[];
+}
+
+export interface TraceDoc {
+  v: number;
+  runs: TraceRun[];
+}
+
+export interface AttributionProbe {
+  key: string;
+  label: string;
+  impact: Impact;
+  confidence: number;
+}
+
+export interface Attribution {
+  v: number;
+  llm_mode: string;
+  model: string;
+  generated_at: string;
+  base: { impact: Impact; confidence: number };
+  probes: AttributionProbe[];
+  note: string;
 }
 
 export interface BriefingItem {

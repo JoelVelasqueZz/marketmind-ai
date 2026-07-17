@@ -6,6 +6,7 @@ import Disclaimer from "../components/Disclaimer";
 import ImpactBadge from "../components/ImpactBadge";
 import ReviewControls, { STATUS_LABEL } from "../components/ReviewControls";
 import Sparkline from "../components/Sparkline";
+import TraceDrawer from "../components/TraceDrawer";
 import { formatPct } from "../lib/format";
 import type { Instrument, NewsItem, ReviewStatus, Signal } from "../types";
 
@@ -22,6 +23,7 @@ export default function Signals() {
   const [history, setHistory] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [traceOpen, setTraceOpen] = useState(false);
 
   useEffect(() => {
     api.getInstruments().then(setInstruments).catch(() => setInstruments([]));
@@ -237,6 +239,19 @@ export default function Signals() {
               Confianza
             </p>
             <ConfidenceRing confidence={current.confidence} size={96} />
+            <button
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-surface-container-low border border-outline-variant text-on-surface text-label-md font-bold rounded-lg disabled:opacity-40 hover:border-primary transition-colors"
+              disabled={!current.has_trace}
+              title={
+                current.has_trace
+                  ? "Caja de Cristal: la traza de ejecución escrita por el orquestador"
+                  : "Señal anterior a la trazabilidad"
+              }
+              onClick={() => setTraceOpen(true)}
+            >
+              <span className="material-symbols-outlined text-sm">account_tree</span>
+              Ver ejecución
+            </button>
             <div className="w-full">
               <ReviewControls
                 key={current.id}
@@ -247,6 +262,10 @@ export default function Signals() {
             </div>
           </div>
         </div>
+      )}
+
+      {traceOpen && current && (
+        <TraceDrawer signal={current} onClose={() => setTraceOpen(false)} />
       )}
 
       <h3 className="font-headline-md text-headline-md text-on-surface mb-3">Señales generadas</h3>

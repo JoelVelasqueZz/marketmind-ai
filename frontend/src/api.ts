@@ -1,4 +1,5 @@
 import type {
+  Attribution,
   Briefing,
   Health,
   Instrument,
@@ -6,6 +7,7 @@ import type {
   PricePoint,
   Signal,
   TaskAlert,
+  TraceDoc,
   Watchlist,
   WatchlistOverview,
 } from "./types";
@@ -71,6 +73,13 @@ export const api = {
     request<Signal>(`/api/signals/${signalId}/review`, {
       method: "POST",
       body: JSON.stringify({ status, justification }),
+    }),
+
+  getSignalTrace: (signalId: string) => request<TraceDoc>(`/api/signals/${signalId}/trace`),
+
+  computeAttribution: (signalId: string, force = false) =>
+    request<Attribution>(`/api/signals/${signalId}/attribution${force ? "?force=true" : ""}`, {
+      method: "POST",
     }),
 
   getWatchlists: () => request<Watchlist[]>("/api/briefing/watchlists"),
