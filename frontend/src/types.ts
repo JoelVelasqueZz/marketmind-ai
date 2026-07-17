@@ -9,6 +9,32 @@ export type ReviewCause =
   | "contexto_faltante"
   | "criterio_del_comite";
 
+export type ReviewerRole = "analista" | "lead" | "compliance";
+
+export interface GateCheck {
+  item: string;
+  passed: boolean;
+  detail: string;
+  rule: string;
+}
+
+export interface Compliance {
+  verdict: "ok" | "corregida" | "marcada";
+  passed: number;
+  total: number;
+  checks: GateCheck[];
+}
+
+export interface ReviewEvent {
+  from_status: string;
+  to_status: string;
+  reviewer: string;
+  role: string;
+  cause?: string | null;
+  justification: string;
+  at: string;
+}
+
 export type TriageLevel = "rojo" | "naranja" | "amarillo" | "verde" | "azul";
 
 export interface Triage {
@@ -81,9 +107,11 @@ export interface Signal {
   review_status: ReviewStatus;
   review_justification?: string | null;
   review_cause?: ReviewCause | null;
+  reviewed_by?: string | null;
   review_examples_used: ReviewExample[];
   has_trace: boolean;
   has_attribution: boolean;
+  compliance?: Compliance | null;
   triage?: Triage | null;
   freshness?: Freshness | null;
 }
@@ -115,6 +143,12 @@ export interface TraceEvent {
   scope?: string;
   field?: string;
   action?: string;
+  passed?: number;
+  total?: number;
+  verdict?: string;
+  reason?: string;
+  attempt?: number;
+  violations?: string[];
 }
 
 export interface TraceRun {

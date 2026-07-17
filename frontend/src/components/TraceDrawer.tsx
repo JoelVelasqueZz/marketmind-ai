@@ -2,7 +2,14 @@ import { useEffect, useState } from "react";
 import { api } from "../api";
 import PipelineGraph from "./PipelineGraph";
 import { formatConfidence } from "../lib/format";
-import type { Attribution, Signal, TraceDoc, TraceEvent, TraceRun } from "../types";
+import type {
+  Attribution,
+  ReviewEvent,
+  Signal,
+  TraceDoc,
+  TraceEvent,
+  TraceRun,
+} from "../types";
 
 interface TraceDrawerProps {
   signal: Signal;
@@ -16,7 +23,6 @@ const PATH_LABEL: Record<TraceRun["path"], string> = {
 };
 
 function providerLabel(llmMode: string, model: string): string {
-  // En mock el nombre del modelo de config no aplica: el generador es determinista.
   return llmMode === "mock" ? "mock · determinista (sin LLM)" : `${llmMode} · ${model}`;
 }
 
@@ -69,9 +75,19 @@ function eventLine(e: TraceEvent): { icon: string; text: string; highlight?: boo
     case "reuse":
       return { icon: "cached", text: `Señal reusada (${e.scope}) — el Analista no vuelve a correr` };
     case "guardrail":
+      return { icon: "shield", text: `Guardrail: ${e.field} ${e.action}`, highlight: true };
+    case "retry":
       return {
-        icon: "shield",
-        text: `Guardrail: ${e.field} ${e.action}`,
+        icon: "restart_alt",
+        text: `Rechazada por el Compliance Gate (${(e.violations ?? []).join(", ")}) — reintento ${e.attempt}`,
+        highlight: true,
+      };
+    case "gate":
+      return {
+        icon: "verified",
+        text: `Compliance Gate: ${e.passed}/${e.total} checks · ${
+          e.verdict === "corregida" ? "corregida tras auto-corrección" : e.verdict
+        }`,
         highlight: true,
       };
     default:
@@ -80,6 +96,14 @@ function eventLine(e: TraceEvent): { icon: string; text: string; highlight?: boo
   }
 }
 
+const CAUSE_LABEL: Record<string, string> = {
+  evidencia_insuficiente: "evidencia insuficiente",
+  sobre_reaccion_al_precio: "sobre-reacción al precio",
+  dato_no_soportado_por_fuente: "dato no soportado por la fuente",
+  contexto_faltante: "contexto faltante",
+  criterio_del_comite: "criterio del Comité",
+};
+
 export default function TraceDrawer({ signal, onClose }: TraceDrawerProps) {
   const [trace, setTrace] = useState<TraceDoc | null>(null);
   const [runIndex, setRunIndex] = useState(0);
@@ -87,6 +111,8 @@ export default function TraceDrawer({ signal, onClose }: TraceDrawerProps) {
   const [attribution, setAttribution] = useState<Attribution | null>(null);
   const [attribLoading, setAttribLoading] = useState(false);
   const [attribError, setAttribError] = useState<string | null>(null);
+  const [replayIndex, setReplayIndex] = useState<number | null>(null);
+  const [events, setEvents] = useState<ReviewEvent[]>([]);
 
   useEffect(() => {
     api
@@ -96,10 +122,10 @@ export default function TraceDrawer({ signal, onClose }: TraceDrawerProps) {
         setRunIndex(t.runs.length - 1);
       })
       .catch((err) => setError(err instanceof Error ? err.message : String(err)));
+    api.getSignalEvents(signal.id).then(setEvents).catch(() => setEvents([]));
   }, [signal.id]);
 
   useEffect(() => {
-    // Con el drawer abierto: sin scroll de fondo y Escape cierra.
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
@@ -111,6 +137,19 @@ export default function TraceDrawer({ signal, onClose }: TraceDrawerProps) {
       window.removeEventListener("keydown", onKey);
     };
   }, [onClose]);
+
+  const run = trace?.runs[runIndex];
+
+  // Replay animado: revela los eventos uno a uno con su timing real (comprimido).
+  useEffect(() => {
+    if (run == null || replayIndex == null) return;
+    if (replayIndex >= run.events.length - 1) return;
+    const cur = run.events[replayIndex];
+    const next = run.events[replayIndex + 1];
+    const delay = Math.min(800, Math.max(250, (next?.t_ms ?? 0) - (cur?.t_ms ?? 0)));
+    const timer = setTimeout(() => setReplayIndex((i) => (i == null ? i : i + 1)), delay);
+    return () => clearTimeout(timer);
+  }, [run, replayIndex]);
 
   async function loadAttribution() {
     setAttribLoading(true);
@@ -124,7 +163,10 @@ export default function TraceDrawer({ signal, onClose }: TraceDrawerProps) {
     }
   }
 
-  const run = trace?.runs[runIndex];
+  const visibleEvents =
+    run == null ? [] : replayIndex == null ? run.events : run.events.slice(0, replayIndex + 1);
+  const visibleRun = run == null ? null : { ...run, events: visibleEvents };
+  const compliance = signal.compliance;
 
   return (
     <>
@@ -160,7 +202,10 @@ export default function TraceDrawer({ signal, onClose }: TraceDrawerProps) {
             {trace.runs.map((r, i) => (
               <button
                 key={i}
-                onClick={() => setRunIndex(i)}
+                onClick={() => {
+                  setRunIndex(i);
+                  setReplayIndex(null);
+                }}
                 className={`px-3 py-1.5 rounded-lg text-label-sm font-bold border ${
                   i === runIndex
                     ? "bg-primary-container text-on-primary-container border-primary"
@@ -173,11 +218,64 @@ export default function TraceDrawer({ signal, onClose }: TraceDrawerProps) {
           </div>
         )}
 
-        {run && (
+        {visibleRun && run && (
           <>
-            <div className="bg-surface-container-low border border-outline-variant rounded-xl p-3 mb-4">
-              <PipelineGraph run={run} />
+            <div className="bg-surface-container-low border border-outline-variant rounded-xl p-3 mb-3">
+              <PipelineGraph run={visibleRun} />
             </div>
+
+            <button
+              className="w-full mb-4 flex items-center justify-center gap-2 px-3 py-1.5 bg-surface-container-low border border-outline-variant rounded-lg text-label-sm font-bold text-on-surface hover:border-primary"
+              onClick={() => setReplayIndex(0)}
+            >
+              <span className="material-symbols-outlined text-sm">smart_display</span>
+              {replayIndex != null && replayIndex < run.events.length - 1
+                ? "Reproduciendo…"
+                : "Reproducir ejecución"}
+            </button>
+
+            {compliance && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-label-sm uppercase font-bold text-primary">
+                    Compliance Gate — despacho
+                  </p>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                      compliance.verdict === "marcada"
+                        ? "bg-error-container/20 text-error"
+                        : compliance.verdict === "corregida"
+                          ? "bg-warning/20 text-warning"
+                          : "bg-success/15 text-success"
+                    }`}
+                  >
+                    {compliance.passed}/{compliance.total}
+                    {compliance.verdict === "corregida" && " · corregida"}
+                    {compliance.verdict === "marcada" && " · marcada"}
+                  </span>
+                </div>
+                <ul className="space-y-1">
+                  {compliance.checks.map((c) => (
+                    <li
+                      key={c.item}
+                      className="flex items-start gap-2 text-body-md text-on-surface-variant"
+                      title={c.rule}
+                    >
+                      <span
+                        className={`material-symbols-outlined text-sm mt-0.5 ${
+                          c.passed ? "text-success" : "text-error"
+                        }`}
+                      >
+                        {c.passed ? "check_circle" : "cancel"}
+                      </span>
+                      <span>
+                        <b>{c.item.replace(/_/g, " ")}</b> — {c.detail}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <div className="mb-4">
               <p className="text-label-sm uppercase font-bold text-primary mb-2">
@@ -199,7 +297,7 @@ export default function TraceDrawer({ signal, onClose }: TraceDrawerProps) {
                 {run.truncated && " · traza recortada"}
               </p>
               <ol className="space-y-2">
-                {run.events.map((e, idx) => {
+                {visibleEvents.map((e, idx) => {
                   const line = eventLine(e);
                   if (!line) return null;
                   return (
@@ -237,6 +335,28 @@ export default function TraceDrawer({ signal, onClose }: TraceDrawerProps) {
                 )}
               </div>
             </div>
+
+            {events.length > 0 && (
+              <div className="mb-4">
+                <p className="text-label-sm uppercase font-bold text-primary mb-2">
+                  Expediente de revisión (cadena de custodia)
+                </p>
+                <ol className="space-y-2">
+                  {events.map((ev, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-body-md text-on-surface-variant">
+                      <span className="material-symbols-outlined text-sm mt-0.5 text-primary">person</span>
+                      <span>
+                        <b>{ev.reviewer}</b> ({ev.role}) · {ev.from_status} → <b>{ev.to_status}</b>
+                        {ev.cause && ` · ${CAUSE_LABEL[ev.cause] ?? ev.cause}`}
+                        <span className="block text-label-sm">
+                          {new Date(ev.at).toLocaleString("es-EC")} — “{ev.justification}”
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
 
             <div className="mb-2">
               <div className="flex items-center justify-between mb-2">

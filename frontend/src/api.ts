@@ -5,6 +5,7 @@ import type {
   Instrument,
   NewsItem,
   PricePoint,
+  ReviewEvent,
   Signal,
   TaskAlert,
   TraceDoc,
@@ -63,19 +64,29 @@ export const api = {
   getSignals: (asset?: string) =>
     request<Signal[]>(`/api/signals${toQuery({ asset })}`),
 
-  generateSignal: (news_id: string, instrument: string, force = false) =>
+  generateSignal: (news_id: string, instrument: string, force = false, demo_contaminate = false) =>
     request<Signal>("/api/signals/generate", {
       method: "POST",
-      body: JSON.stringify({ news_id, instrument, force }),
+      body: JSON.stringify({ news_id, instrument, force, demo_contaminate }),
     }),
 
-  reviewSignal: (signalId: string, status: string, justification: string, cause?: string | null) =>
+  reviewSignal: (
+    signalId: string,
+    status: string,
+    justification: string,
+    cause?: string | null,
+    reviewer = "Analista",
+    role = "analista",
+  ) =>
     request<Signal>(`/api/signals/${signalId}/review`, {
       method: "POST",
-      body: JSON.stringify({ status, justification, cause: cause || null }),
+      body: JSON.stringify({ status, justification, cause: cause || null, reviewer, role }),
     }),
 
   getReviewCauses: () => request<Record<string, number>>("/api/signals/review-causes"),
+
+  getSignalEvents: (signalId: string) =>
+    request<ReviewEvent[]>(`/api/signals/${signalId}/events`),
 
   getSignalTrace: (signalId: string) => request<TraceDoc>(`/api/signals/${signalId}/trace`),
 

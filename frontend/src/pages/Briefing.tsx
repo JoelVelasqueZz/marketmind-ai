@@ -11,11 +11,18 @@ import { formatPct } from "../lib/format";
 import type {
   Briefing as BriefingType,
   ReviewCause,
+  ReviewerRole,
   ReviewStatus,
   Signal,
   TaskAlert,
   Watchlist,
 } from "../types";
+
+const ROLE_NAME: Record<ReviewerRole, string> = {
+  analista: "Analista",
+  lead: "Lead",
+  compliance: "Compliance",
+};
 
 export default function Briefing() {
   const [watchlists, setWatchlists] = useState<Watchlist[]>([]);
@@ -102,9 +109,10 @@ export default function Briefing() {
     status: ReviewStatus,
     justification: string,
     cause: ReviewCause | null,
+    role: ReviewerRole,
   ) {
     if (status === "pending") return;
-    await api.reviewSignal(signalId, status, justification, cause);
+    await api.reviewSignal(signalId, status, justification, cause, ROLE_NAME[role], role);
     setBriefing((prev) =>
       prev
         ? {
@@ -239,8 +247,8 @@ export default function Briefing() {
                 currentStatus={item.signal.review_status}
                 currentJustification={item.signal.review_justification}
                 currentCause={item.signal.review_cause}
-                onSave={(status, justification, cause) =>
-                  handleReview(item.signal.id, status, justification, cause)
+                onSave={(status, justification, cause, role) =>
+                  handleReview(item.signal.id, status, justification, cause, role)
                 }
               />
             </div>

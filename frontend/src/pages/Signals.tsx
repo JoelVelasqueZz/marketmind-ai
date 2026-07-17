@@ -10,7 +10,7 @@ import Sparkline from "../components/Sparkline";
 import TraceDrawer from "../components/TraceDrawer";
 import TriageBadge from "../components/TriageBadge";
 import { formatPct } from "../lib/format";
-import type { Instrument, NewsItem, ReviewCause, ReviewStatus, Signal } from "../types";
+import type { Instrument, NewsItem, ReviewCause, ReviewerRole, ReviewStatus, Signal } from "../types";
 
 export default function Signals() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -43,26 +43,45 @@ export default function Signals() {
     });
   }, [selectedInstrument]);
 
+  const ROLE_NAME: Record<ReviewerRole, string> = {
+    analista: "Analista",
+    lead: "Lead",
+    compliance: "Compliance",
+  };
+
   async function handleReview(
     signalId: string,
     status: ReviewStatus,
     justification: string,
     cause: ReviewCause | null,
+    role: ReviewerRole,
   ) {
     if (status === "pending") return;
-    const updated = await api.reviewSignal(signalId, status, justification, cause);
+    const updated = await api.reviewSignal(
+      signalId,
+      status,
+      justification,
+      cause,
+      ROLE_NAME[role],
+      role,
+    );
     setCurrent((prev) => (prev && prev.id === signalId ? updated : prev));
     setHistory((prev) => prev.map((s) => (s.id === signalId ? updated : s)));
   }
 
-  async function generate(newsId: string, instrument: string, force = false) {
+  async function generate(
+    newsId: string,
+    instrument: string,
+    force = false,
+    demoContaminate = false,
+  ) {
     setLoading(true);
     setError(null);
     try {
       const news = await api.getNews({ asset: instrument }).then((items) =>
         items.find((n) => n.id === newsId) ?? items[0] ?? null,
       );
-      const signal = await api.generateSignal(newsId, instrument, force);
+      const signal = await api.generateSignal(newsId, instrument, force, demoContaminate);
       setCurrent(signal);
       setCurrentNews(news);
       setHistory((prev) => [signal, ...prev.filter((s) => s.id !== signal.id)]);
@@ -166,6 +185,14 @@ export default function Signals() {
         >
           {loading ? "Analizando…" : "Generar análisis"}
         </button>
+        <button
+          className="px-4 py-2 bg-surface-container border border-error/40 text-error text-label-md font-bold rounded-lg disabled:opacity-40"
+          disabled={!selectedInstrument || !selectedNewsId || loading}
+          onClick={() => generate(selectedNewsId, selectedInstrument, true, true)}
+          title="Modo demo (mock): fuerza una señal alucinada para mostrar al Compliance Gate rechazándola y corrigiéndola"
+        >
+          Inyectar señal alucinada
+        </button>
       </div>
 
       {error && <div className="mb-stack-md text-body-md text-error">Error: {error}</div>}
@@ -185,6 +212,21 @@ export default function Signals() {
             <div className="flex items-center gap-3 mb-4 flex-wrap">
               <ImpactBadge impact={current.impact} />
               {current.triage && <TriageBadge triage={current.triage} />}
+              {current.compliance && (
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[11px] font-bold flex items-center gap-1 whitespace-nowrap ${
+                    current.compliance.verdict === "marcada"
+                      ? "bg-error-container/20 text-error"
+                      : current.compliance.verdict === "corregida"
+                        ? "bg-warning/20 text-warning"
+                        : "bg-success/15 text-success"
+                  }`}
+                  title="Compliance Gate 360: checks deterministas de despacho (ver ejecución)"
+                >
+                  <span className="material-symbols-outlined text-[13px]">verified</span>
+                  Despacho {current.compliance.passed}/{current.compliance.total}
+                </span>
+              )}
               {current.freshness && (
                 <FreshnessChip
                   freshness={current.freshness}
@@ -278,8 +320,8 @@ export default function Signals() {
                 currentStatus={current.review_status}
                 currentJustification={current.review_justification}
                 currentCause={current.review_cause}
-                onSave={(status, justification, cause) =>
-                  handleReview(current.id, status, justification, cause)
+                onSave={(status, justification, cause, role) =>
+                  handleReview(current.id, status, justification, cause, role)
                 }
               />
             </div>
