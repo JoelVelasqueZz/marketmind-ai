@@ -22,13 +22,28 @@ def mock_response(schema, user_prompt: str):
     context = _extract_context(user_prompt)
 
     if schema is AnalystLLMOutput:
-        return _mock_analyst(context)
+        return _mock_analyst(context, contaminate="[[DEMO_CONTAMINAR]]" in user_prompt)
     if schema is AdvisorLLMOutput:
         return _mock_advisor(context)
     raise ValueError(f"mock_llm: schema no soportado {schema}")
 
 
-def _mock_analyst(context: dict) -> AnalystLLMOutput:
+def _mock_analyst(context: dict, contaminate: bool = False) -> AnalystLLMOutput:
+    if contaminate:
+        # Salida "alucinada" de demo: cita un movimiento inventado (+7.0%) que
+        # no coincide con el dato real -> el Compliance Gate la rechaza.
+        instrument = context.get("instrument", "el instrumento")
+        return AnalystLLMOutput(
+            impact="positive",
+            confidence=0.9,
+            evidence=[
+                f"El evento impulso a {instrument} un +7.0% segun mi lectura del mercado.",
+                "El movimiento confirma una tendencia alcista sostenida.",
+            ],
+            reasoning="Salida de demostracion para probar el control de cumplimiento.",
+            suggested_action=f"Investigar catalizadores de {instrument}.",
+        )
+
     change_pct = context.get("price_change_pct", 0.0)
     instrument = context.get("instrument", "el instrumento")
     headline = context.get("headline", "")

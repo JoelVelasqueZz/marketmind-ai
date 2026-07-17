@@ -20,6 +20,8 @@ _NEW_COLUMNS = [
     ("signal", "execution_trace", "JSON"),
     ("signal", "attribution", "JSON"),
     ("signal", "review_cause", "VARCHAR"),
+    ("signal", "reviewed_by", "VARCHAR"),
+    ("signal", "compliance", "JSON"),
     ("taskalert", "executive_summary", "JSON"),
 ]
 

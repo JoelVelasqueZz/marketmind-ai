@@ -16,6 +16,9 @@ ReviewCause = Literal[
     "criterio_del_comite",
 ]
 
+# Expediente 360: rol declarado del revisor (no autenticacion criptografica).
+ReviewerRole = Literal["analista", "lead", "compliance"]
+
 
 class InstrumentOut(BaseModel):
     symbol: str
@@ -90,6 +93,36 @@ class FreshnessOut(BaseModel):
     rule: str
 
 
+class GateCheck(BaseModel):
+    """Un check determinista del Compliance Gate con su regla literal."""
+
+    item: str
+    passed: bool
+    detail: str
+    rule: str = ""
+
+
+class ComplianceOut(BaseModel):
+    """Veredicto del Compliance Gate 360 (checklist de despacho)."""
+
+    verdict: Literal["ok", "corregida", "marcada"]
+    passed: int
+    total: int
+    checks: list[GateCheck] = Field(default_factory=list)
+
+
+class ReviewEventOut(BaseModel):
+    """Una fila de la cadena de custodia append-only (Expediente 360)."""
+
+    from_status: str
+    to_status: str
+    reviewer: str
+    role: str
+    cause: Optional[str] = None
+    justification: str = ""
+    at: datetime
+
+
 class SignalOut(BaseModel):
     id: str
     news_id: str
@@ -105,10 +138,13 @@ class SignalOut(BaseModel):
     review_status: ReviewStatus
     review_justification: Optional[str] = None
     review_cause: Optional[ReviewCause] = None
+    reviewed_by: Optional[str] = None
     review_examples_used: list[ReviewExample] = Field(default_factory=list)
     # Caja de Cristal: la UI decide mostrar "Ver ejecucion" sin llamada extra.
     has_trace: bool = False
     has_attribution: bool = False
+    # Compliance Gate 360: checklist de despacho.
+    compliance: Optional[ComplianceOut] = None
     # Derivados al servir (sin migracion): triaje con SLA y vigencia.
     triage: Optional[TriageOut] = None
     freshness: Optional[FreshnessOut] = None
@@ -118,6 +154,8 @@ class SignalGenerateRequest(BaseModel):
     news_id: str
     instrument: str
     force: bool = False
+    # SOLO demo (mock): fuerza una salida alucinada para mostrar el gate.
+    demo_contaminate: bool = False
 
 
 class ReviewRequest(BaseModel):
@@ -126,6 +164,9 @@ class ReviewRequest(BaseModel):
     justification: str = Field(min_length=3)
     # NTSB: causa raiz opcional de la taxonomia cerrada.
     cause: Optional[ReviewCause] = None
+    # Expediente 360: identidad y rol declarados del revisor.
+    reviewer: str = "Analista"
+    role: ReviewerRole = "analista"
 
 
 # --- Salida estructurada que produce el LLM (Asesor) ---

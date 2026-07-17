@@ -20,6 +20,7 @@ from backend.schemas import (
     AssetSignalSummary,
     BriefingItemOut,
     BriefingOut,
+    ComplianceOut,
     FreshnessOut,
     PriceComparison,
     SignalOut,
@@ -77,8 +78,10 @@ def _signal_out(signal: Signal) -> SignalOut:
         review_status=signal.review_status,
         review_justification=signal.review_justification,
         review_cause=signal.review_cause,
+        reviewed_by=signal.reviewed_by,
         has_trace=bool(signal.execution_trace),
         has_attribution=bool(signal.attribution),
+        compliance=ComplianceOut(**signal.compliance) if signal.compliance else None,
         triage=TriageOut(
             **compute_triage(signal.impact, signal.confidence, signal.price_comparison["change_pct"])
         ),
