@@ -74,6 +74,11 @@ Ver checklist en `DOCS/PLAN.md` → sección Despliegue (Render para el backend 
 - **HU2 — Señal explicable:** `POST /api/signals/generate` (Analista) → página **AI Analysis**.
 - **HU3 — Briefing con revisión humana:** `POST /api/briefing/generate` (Asesor) + `POST /api/signals/{signal_id}/review` → página **Briefings**. Nunca crea órdenes de compra/venta, solo tareas/alertas.
 
+## Features adicionales
+
+- **El Analista aprende del Comité:** las revisiones humanas (`revisada`/`escalada`/`descartada` con justificación) sobre un instrumento se reinyectan como ejemplos few-shot la próxima vez que se genera una señal para ese mismo instrumento, calibrando el criterio del Analista con juicio humano ya emitido — sin reentrenar el modelo. Visible en **AI Analysis** como el aviso "Calibrado con N revisiones previas del Comité".
+- **Caja de Cristal:** cada señal guarda el expediente de ejecución escrito por el orquestador (qué nodo corrió, qué regla decidió la ruta, qué llamada LLM se hizo y en cuánto tiempo) — botón **"Ver ejecución"** en **AI Analysis** y **Briefings**. Incluye un sondeo contrafactual ("¿Qué pesó más?") que vuelve a evaluar la señal quitándole una pieza de evidencia a la vez, para mostrar empíricamente qué la sostenía.
+
 ## Documentación
 
 - [`DOCS/DOCUMENTO_TECNICO.md`](DOCS/DOCUMENTO_TECNICO.md) — entregable técnico: arquitectura, track, negocio, integración empresarial.
