@@ -13,7 +13,7 @@ import { formatPct } from "../lib/format";
 import type { Instrument, NewsItem, ReviewCause, ReviewStatus, Signal } from "../types";
 
 export default function Signals() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [newsByInstrument, setNewsByInstrument] = useState<NewsItem[]>([]);
   const [selectedInstrument, setSelectedInstrument] = useState("");
@@ -188,7 +188,12 @@ export default function Signals() {
               {current.freshness && (
                 <FreshnessChip
                   freshness={current.freshness}
-                  onReevaluate={() => generate(current.news_id, current.instrument, true)}
+                  onReevaluate={() => {
+                    // Limpiar ?signal= del deep-link: la regeneración crea un id
+                    // nuevo y el efecto del param restauraría la señal vieja.
+                    setSearchParams({}, { replace: true });
+                    generate(current.news_id, current.instrument, true);
+                  }}
                   reevaluating={loading}
                 />
               )}

@@ -121,6 +121,11 @@ def review_signal(
     signal = session.get(Signal, signal_id)
     if signal is None:
         return None
+    # La revision es un overwrite completo del estado actual. La causa raiz
+    # (NTSB) solo aplica a escalada/descartada: aprobar una senal nunca debe
+    # contar en el tablero de modos de fallo.
+    if status not in ("escalada", "descartada"):
+        cause = None
     signal.review_status = status
     signal.review_justification = justification
     signal.review_cause = cause

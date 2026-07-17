@@ -60,7 +60,9 @@ function eventLine(e: TraceEvent): { icon: string; text: string; highlight?: boo
         text: `Arista ${e.edge}: ${e.rule} → con ${e.inputs?.impact} · ${
           e.inputs ? Math.round(e.inputs.confidence * 100) : "?"
         }% va a ${e.target === "monitor" ? "Monitoreo" : "Asesor"} (${e.llm_cost})${
-          typeof e.saved_usd_est === "number" ? ` · ahorro ≈ ${fmtUsd(e.saved_usd_est)}` : ""
+          typeof e.saved_usd_est === "number" && e.saved_usd_est > 0
+            ? ` · ahorro ≈ ${fmtUsd(e.saved_usd_est)}`
+            : ""
         }`,
         highlight: true,
       };

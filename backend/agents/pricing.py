@@ -8,9 +8,12 @@ proveedor (usage de la respuesta); en modo mock los tokens son estimados
 
 PRICES_PER_MTOK = {
     # (proveedor, prefijo de modelo) -> (usd_in, usd_out)
-    ("gemini", "gemini"): (0.10, 0.40),
+    # gemini-flash-latest apunta al Flash mas reciente (2.5+): $0.30/$2.50.
+    ("gemini", "gemini"): (0.30, 2.50),
+    # claude-sonnet-5 lista $3/$15 (precio introductorio $2/$10 hasta ago-2026).
     ("claude", "claude"): (3.00, 15.00),
-    ("deepseek", "deepseek"): (0.27, 1.10),
+    # deepseek-chat V3.2 tras el recorte de sept-2025.
+    ("deepseek", "deepseek"): (0.28, 0.42),
     ("mock", ""): (0.0, 0.0),
 }
 

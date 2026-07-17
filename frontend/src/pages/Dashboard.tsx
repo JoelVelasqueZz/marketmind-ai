@@ -210,14 +210,17 @@ export default function Dashboard() {
         >
           <h3 className="font-headline-md text-headline-md text-on-surface mb-1">Triaje de la cola</h3>
           <p className="text-label-sm text-on-surface-variant mb-4">
-            A qué debe mirar primero el humano — niveles con SLA, calculados por reglas literales.
+            Señales pendientes de revisión — a qué debe mirar primero el humano. Al revisar una señal,
+            sale de la cola.
           </p>
           {loading ? (
             <Skeleton className="h-10" />
           ) : (
             <div className="flex flex-wrap gap-4">
               {TRIAGE_ORDER.map((level) => {
-                const count = signals.filter((s) => s.triage?.level === level).length;
+                const count = signals.filter(
+                  (s) => s.review_status === "pending" && s.triage?.level === level,
+                ).length;
                 return (
                   <div key={level} className="flex items-center gap-2">
                     <span className={`w-2.5 h-2.5 rounded-full ${TRIAGE_DOT[level]}`} />

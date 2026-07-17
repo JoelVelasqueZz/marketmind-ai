@@ -242,6 +242,24 @@ Caja negra al centro, siete anillos — con etiqueta honesta de estado:
 
 ---
 
+## 4.5 Preparación de la demo del pack final (checklist para mañana temprano)
+
+1. **Sembrar una señal vencida** (sin esto, Vigencia es invisible: todo lo generado en vivo marca
+   100% y el botón Re-evaluar nunca aparece). Tras generar una señal de BTC o ETH (vida media 2 días):
+   ```bash
+   sqlite3 data/app.db "UPDATE signal SET created_at = datetime('now','-5 days') WHERE id='<id>';"
+   # (en Neon: mismo UPDATE via psql). 5 días / vida media 2 → vigencia ≈ 18%, botón visible.
+   ```
+2. **Decidir el modo del taxímetro**: con `LLM_MODE=gemini` el drawer muestra tokens **medidos** y
+   centavos reales (el mejor escenario). Si la demo corre en mock, narrarlo explícito: *"el taxímetro
+   distingue medido vs estimado — en mock los tokens son estimados y la tarifa es $0 por honestidad;
+   en producción con Gemini se leen del usage real"*.
+3. **Demostrar Re-evaluar desde la cola de señales** (no desde el deep-link de una tarea).
+4. **Sembrar 3-4 revisiones con causas variadas** para que el tablero "¿De qué se equivoca el
+   Analista?" tenga distribución, no una sola barra.
+5. La tarjeta "Triaje de la cola" cuenta solo señales **pendientes**: al revisar una en vivo, el
+   contador baja — ese es el momento de demo ("la cola se atiende, como en urgencias").
+
 ## 5. Riesgos y mitigaciones
 
 | Riesgo | Mitigación |

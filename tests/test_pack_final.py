@@ -86,8 +86,9 @@ def test_signal_out_includes_fresh_freshness(client):
 
 
 def test_pricing_table():
-    assert estimate_cost_usd("gemini", "gemini-flash-latest", 1_000_000, 0) == 0.10
+    assert estimate_cost_usd("gemini", "gemini-flash-latest", 1_000_000, 0) == 0.30
     assert estimate_cost_usd("claude", "claude-sonnet-5", 0, 1_000_000) == 15.0
+    assert estimate_cost_usd("deepseek", "deepseek-chat", 1_000_000, 1_000_000) == 0.70
     assert estimate_cost_usd("mock", "gemini-flash-latest", 999, 999) == 0.0
     assert estimate_cost_usd("desconocido", "x", 1000, 1000) == 0.0
 
@@ -136,6 +137,24 @@ def test_review_with_cause_persists_and_feeds_dashboard(client):
 
     counts = client.get("/api/signals/review-causes").json()
     assert counts["sobre_reaccion_al_precio"] == 1
+
+
+def test_approving_a_signal_never_counts_as_analyst_failure(client):
+    # Aprobar (revisada) con causa enviada: la causa se descarta — el tablero
+    # NTSB solo cuenta escaladas/descartadas.
+    s = client.post(
+        "/api/signals/generate", json={"news_id": "n003", "instrument": "AAPL"}
+    ).json()
+    reviewed = client.post(
+        f"/api/signals/{s['id']}/review",
+        json={
+            "status": "revisada",
+            "justification": "Confirmado, sin observaciones.",
+            "cause": "evidencia_insuficiente",
+        },
+    ).json()
+    assert reviewed["review_cause"] is None
+    assert client.get("/api/signals/review-causes").json() == {}
 
 
 def test_review_rejects_cause_outside_taxonomy(client):

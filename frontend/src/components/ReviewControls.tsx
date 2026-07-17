@@ -36,7 +36,11 @@ export default function ReviewControls({
     setSaving(true);
     setError(null);
     try {
-      await onSave(status, justification, cause || null);
+      // La causa raiz solo aplica a escalada/descartada: si el usuario cambio
+      // de opinion y aprueba, no debe arrastrarse una causa oculta al tablero.
+      const effectiveCause =
+        status === "escalada" || status === "descartada" ? cause || null : null;
+      await onSave(status, justification, effectiveCause);
       setEditing(false);
       setJustSaved(true);
       setTimeout(() => setJustSaved(false), 2500);

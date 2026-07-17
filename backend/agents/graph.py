@@ -75,7 +75,8 @@ def record_edge_decision(trace, impact: str, confidence: float, target: str) -> 
     briefing, que aplica el mismo criterio fuera del grafo. Al derivar a
     monitoreo registra ademas el ahorro estimado (taximetro): el costo de la
     llamada del Asesor que NO se hizo, aproximado por la llamada del Analista
-    de esta misma corrida (mismo proveedor y tamano de contexto similar).
+    de esta misma corrida — solo cuando esa llamada existe en la corrida (en
+    la rama de reuso del briefing no hay llm_call previo y el ahorro se omite).
     """
     if trace is None:
         return
